@@ -1,0 +1,85 @@
+.hero {
+  position: relative;
+  padding: 6rem 2rem;
+  text-align: center;
+  background-image: url('/img/intro_6.jpg');
+  background-size: cover;
+  background-position: top center; /* Mostrar la parte superior de la imagen */
+  color: white;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 25, 47, 0.55); /* Menos opacidad para que se note más la imagen */
+  z-index: 0;
+}
+
+.title,
+.subtitle,
+.button {
+  position: relative;
+  z-index: 1;
+  animation: fadeInUp 1s ease-in-out;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.title {
+  color: #FFFFFF;
+  font-size: 3rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+  animation-delay: 0.2s;
+  animation-fill-mode: both;
+  letter-spacing: 1.2px;
+}
+
+.subtitle {
+  color: #f0f0f0;
+  font-size: 1.3rem;
+  margin-bottom: 2.5rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  animation-delay: 0.4s;
+  animation-fill-mode: both;
+  line-height: 1.6;
+}
+
+.button {
+  background: linear-gradient(45deg, #155FBF, #1D3973);
+  color: white;
+  padding: 16px 36px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  animation-delay: 0.6s;
+  animation-fill-mode: both;
+  box-shadow: 0 6px 18px rgba(21, 95, 191, 0.6);
+  text-transform: uppercase;
+}
+
+.button:hover {
+  background: linear-gradient(45deg, #1D3973, #155FBF);
+  transform: scale(1.08);
+  box-shadow: 0 10px 30px rgba(29, 57, 115, 0.85);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+

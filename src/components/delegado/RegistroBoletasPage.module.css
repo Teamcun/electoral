@@ -1,0 +1,248 @@
+.container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1.5rem 2rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    inset 0 4px 8px rgba(21, 95, 191, 0.1), /* sombra interior suave */
+    0 6px 18px rgba(21, 95, 191, 0.15);    /* sombra exterior */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: box-shadow 0.3s ease;
+}
+
+h2 {
+  text-align: center;
+  color: #1D3973;
+  margin-bottom: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+
+.form {
+  display: grid;
+  gap: 1rem 2rem;
+  align-items: start;
+
+  background: linear-gradient(135deg, #fbfbfc, #ffffff);
+  border: 1.5px solid #155FBF;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 15px rgba(21, 95, 191, 0.2);
+}
+
+/* Para que etiquetas y campos ocupen todo el ancho de su celda */
+.form label {
+  width: 100%;
+}
+
+/* Agrupador de campos del formulario en 2 columnas */
+.columnas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 2rem;
+  align-items: start;
+
+  background: linear-gradient(135deg, #e6f0ff, #c2d7ff);
+  border: 1.5px solid #155FBF;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 15px rgba(21, 95, 191, 0.2);
+}
+
+/* Agrupador para input y select */
+.select-group {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0.5rem;
+  align-items: center; /* centra inputs */
+}
+
+/* Etiquetas */
+label {
+  font-weight: 700;
+  color: #1C3978;
+  margin-bottom: 0.35rem;
+  font-size: 0.95rem;
+  width: 100%;
+  max-width: 400px; /* etiqueta igual que inputs */
+}
+
+/* Inputs y selects */
+input[type="text"],
+input[type="number"],
+input[type="file"],
+.select-group select {
+  padding: 0.45rem 0.75rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 2px solid #155FBF;
+  margin-top: 0;
+  outline-offset: 2px;
+  outline-color: transparent;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  width: 100%;
+  max-width: 400px; /* ancho máximo para inputs */
+  box-sizing: border-box;
+  background-color: #fff;
+  color: #1D3973;
+  font-weight: 600;
+  cursor: text;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+input[type="file"] {
+  padding: 0.3rem 0.75rem;
+  font-weight: normal;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="file"]:focus,
+.select-group select:focus {
+  border-color: #1D3973;
+  box-shadow: 0 0 8px rgba(29, 57, 115, 0.4);
+  outline-color: #1D3973;
+}
+
+.select-group select:hover {
+  border-color: #1D3973;
+  cursor: pointer;
+}
+
+/* Tabla votos */
+.tablaVotos table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.tablaVotos th {
+  background-color: #1D3973;
+  color: #fff;
+  padding: 10px 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.tablaVotos td {
+  border: 1px solid #ccc;
+  padding: 8px 10px;
+  text-align: center;
+  color: #1C3978;
+  font-weight: 600;
+}
+
+/* Totales: dos columnas en escritorio, 1 en móvil */
+.totales {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* fija 2 columnas */
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn {
+  margin-top: 1.5rem;
+  background-color: #155FBF;
+  color: white;
+  padding: 0.7rem 1.5rem; /* padding vertical y horizontal */
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 12px rgba(21, 95, 191, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  text-align: center;
+  user-select: none;
+}
+
+
+.btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  color: #666;
+}
+
+.btn:hover:not(:disabled) {
+  background-color: #1D3973;
+  box-shadow: 0 6px 20px rgba(29, 57, 115, 0.75);
+}
+
+/* Contenedor para input con ícono */
+.input-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon-wrapper input[type="text"] {
+  padding-left: 2.5rem;
+  width: 100%;
+  max-width: 400px; /* limita ancho */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.input-icon-wrapper svg {
+  position: absolute;
+  left: 0.7rem;
+  color: #155FBF;
+  pointer-events: none;
+  font-size: 1.2rem;
+}
+
+/* ===== Responsivo ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem 1.25rem;
+    margin: 1rem auto;
+  }
+
+  /* etiqueta y campos ocupan 100% ancho sin límite */
+  .select-group,
+  label,
+  input[type="text"],
+  input[type="number"],
+  input[type="file"],
+  .select-group select,
+  .input-icon-wrapper input[type="text"] {
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Botón más pequeño */
+  .btn {
+    font-size: 1rem;
+    padding: 0.65rem 0;
+  }
+
+  /* Totales se vuelve una columna */
+  .totales {
+    grid-template-columns: 1fr;
+  }
+  
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .columnas {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+

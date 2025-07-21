@@ -1,0 +1,32 @@
+/* src/components/Test.module.css */
+
+.container {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.overlayContent {
+  position: relative;
+  z-index: 1;
+  color: rgb(100, 3, 3);
+  text-align: center;
+  margin-top: 20vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.description {
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+

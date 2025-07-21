@@ -1,0 +1,327 @@
+:root {
+  --azul-oscuro: #1D3973;
+  --azul-medio: #155FBF;
+  --rojo-fuerte: #F20505;
+  --rojo-claro: #F24B4B;
+  --azul-oscuro2: #1C3978;
+}
+
+.mainContainer {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+  min-width: 320px;
+}
+
+/* IZQUIERDA: Carrusel */
+.leftSection {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  background-color: var(--azul-oscuro);
+}
+
+/* Overlay con desenfoque y gradiente */
+.bgOverlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(29, 57, 115, 0.85), rgba(21, 95, 191, 0.3));
+  backdrop-filter: blur(3px);
+  z-index: 8;
+}
+
+/* Imágenes del carrusel */
+.bgCarousel {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+}
+
+.bgCarousel img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  top: 0;
+  left: 0;
+  transform: scale(1);
+  animation: zoomInOut 15s ease-in-out infinite;
+}
+
+@keyframes zoomInOut {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.bgCarousel img.active {
+  opacity: 1;
+}
+
+/* Texto del carrusel */
+.carouselText {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 20;
+  color: white;
+  background: rgba(29, 57, 115, 0.8); /* azul oscuro semi transparente */
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  max-width: 85%;
+  word-wrap: break-word;
+  box-shadow: 0 0 8px var(--azul-medio);
+}
+
+.carouselText h2 {
+  margin: 0 0 0.5rem;
+  color: white;
+  font-size: 1.5rem;
+  opacity: 0;
+  animation: fadeText 1s ease-in-out forwards;
+}
+
+.carouselText p {
+  margin: 0;
+  font-size: 1rem;
+  opacity: 0;
+  animation: fadeText 1s ease-in-out forwards;
+}
+
+@keyframes fadeText {
+  to {
+    opacity: 1;
+  }
+}
+
+/* DERECHA: Login */
+.rightSection {
+  flex: 1;
+  position: relative;
+  background-color: var(--azul-oscuro2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 2rem;
+  min-width: 0;
+}
+
+.authContainer {
+  position: relative;
+  z-index: 1;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 3rem 2rem;
+  border-radius: 12px;
+  max-width: 380px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 8px 25px rgba(21, 95, 191, 0.5);
+  overflow-wrap: break-word;
+}
+
+.logo img {
+  display: block;
+  margin: 0 auto 1rem;
+  width: 100px;
+  height: auto;
+}
+
+.authTitle {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.4rem;
+  color: var(--azul-oscuro);
+  word-wrap: break-word;
+  font-weight: 700;
+}
+
+.formField {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.formField i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--azul-medio);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.formField input {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  border: 1px solid var(--azul-medio);
+  border-radius: 6px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
+  min-width: 0;
+  color: var(--azul-oscuro2);
+}
+
+.formField input::placeholder {
+  color: var(--azul-medio);
+}
+
+.formField input:focus {
+  border-color: var(--rojo-fuerte);
+}
+
+.authBtn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--rojo-fuerte);
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.authBtn:hover:not(:disabled) {
+  background-color: var(--rojo-claro);
+}
+
+.authBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.authLink {
+  display: block;
+  text-align: center;
+  margin-top: 1rem;
+  color: var(--azul-medio);
+  text-decoration: none;
+  font-size: 0.95rem;
+  word-wrap: break-word;
+}
+
+.authLink:hover {
+  text-decoration: underline;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .mainContainer {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .leftSection,
+  .rightSection {
+    flex: none;
+    width: 100%;
+    height: 50vh;
+    min-height: 300px;
+  }
+
+  .carouselText {
+    bottom: 1rem;
+    left: 1rem;
+    padding: 0.75rem 1rem;
+    max-width: 95%;
+    font-size: 0.9rem;
+  }
+
+  .carouselText h2 {
+    font-size: 1.2rem;
+  }
+
+  .carouselText p {
+    font-size: 0.8rem;
+  }
+
+  .authContainer {
+    max-width: 95%;
+    margin: 1rem auto;
+    padding: 2rem 1.5rem;
+    border-radius: 8px;
+  }
+
+  .authTitle {
+    font-size: 1.25rem;
+  }
+
+  .formField input {
+    font-size: 0.95rem;
+  }
+
+  .authBtn {
+    font-size: 0.95rem;
+    padding: 0.65rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .authContainer {
+    padding: 1.5rem 1rem;
+  }
+
+  .formField input {
+    padding-left: 2rem;
+  }
+}
+
+/* Animación fade-in para texto con color blanco fijo */
+.fadeIn {
+  opacity: 0;
+  animation: fadeText 1s ease-in-out forwards;
+  color: white;
+}
+
+@keyframes fadeText {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .mainContainer {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .rightSection {
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: auto;
+  }
+
+  .authContainer {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+}
+
+
+
+
+
+
+
+
+

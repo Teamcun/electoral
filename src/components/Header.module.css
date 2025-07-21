@@ -1,0 +1,166 @@
+:root {
+  --azul-oscuro: #1D3973;
+  --azul-medio: #155FBF;
+  --rojo-fuerte: #F20505;
+  --rojo-claro: #F24B4B;
+  --azul-oscuro2: #1C3978;
+}
+
+.header {
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(270deg, var(--azul-medio), var(--azul-oscuro2), var(--azul-medio));
+  background-size: 600% 600%;
+  animation: gradientAnimation 12s ease infinite;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes gradientAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo a {
+  display: flex;
+  align-items: center;
+  color: rgb(255, 255, 255);
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 2.2rem;
+  text-transform: uppercase;
+  -webkit-text-stroke: 0.1px var(--rojo-fuerte);
+  transition: color 0.3s ease;
+}
+
+.logo a:hover {
+  color: var(--rojo-fuerte);
+}
+
+.logoImg {
+  height: 50px;
+  margin-right: 10px;
+}
+
+.hamburguesa {
+  display: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid white;
+  border-radius: 8px;
+  font-size: 2rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  color: white;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.hamburguesa:hover {
+  background: var(--rojo-fuerte);
+  color: white;
+  border-color: var(--rojo-fuerte);
+}
+
+/* Navegación principal */
+.nav {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.nav a {
+  position: relative;
+  text-decoration: none;
+  color: white;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.nav a::after {
+  content: '';
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background-color: var(--rojo-fuerte);
+  transition: width 0.3s ease;
+}
+
+.nav a:hover {
+  color: var(--rojo-fuerte);
+}
+
+.nav a:hover::after {
+  width: 100%;
+}
+
+/* ===== Responsivo ===== */
+@media screen and (max-width: 768px) {
+  .hamburguesa {
+    display: block;
+  }
+
+  .nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--azul-oscuro2);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem 2rem;
+    display: none;
+  }
+
+  .nav.abierto {
+    display: flex;
+  }
+
+  .nav a {
+    color: white;
+    padding: 0.5rem 0;
+    font-size: 1.1rem;
+  }
+}
+
+.Btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--rojo-fuerte);
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.Btn:hover:not(:disabled) {
+  background-color: var(--rojo-claro);
+}
+
+.Btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+
+
+
+
+
+
