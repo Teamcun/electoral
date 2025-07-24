@@ -3,7 +3,7 @@ import { auth, db } from '../firebaseConfig';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import Swal from 'sweetalert2';
-import Loader from '../Loader';
+import Loader from './Loader';
 import styles from './CrearUsuarioPage.module.css';
 
 export default function CrearUsuarioPage() {

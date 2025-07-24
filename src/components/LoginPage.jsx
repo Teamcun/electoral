@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth } from './firebaseConfig';
+import { auth, db } from './firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import styles from './LoginPage.module.css';
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -80,21 +81,34 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      console.log('Iniciando sesión con:', email, password);
+
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      console.log('Login exitoso:', user.email);
 
       const q = query(collection(db, 'usuarios'), where('email', '==', user.email));
       const querySnapshot = await getDocs(q);
+      console.log('Documentos obtenidos:', querySnapshot.size);
 
       if (querySnapshot.empty) {
-        setError('Usuario no registrado en la base de datos.');
-        setLoading(false);
-        return;
+        throw new Error('No existe usuario en Firestore');
       }
 
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
-      const rol = userData.rol?.toLowerCase() || '';
+      console.log('Datos del usuario:', userData);
+
+      if (!userData.habilitado) {
+        throw new Error('Usuario no habilitado');
+      }
+
+      const rol = userData.rol?.toLowerCase();
+      if (!rol) {
+        throw new Error('Usuario sin rol');
+      }
+
+      console.log('Rol:', rol);
 
       switch (rol) {
         case 'delegado':
@@ -104,18 +118,21 @@ export default function LoginPage() {
           navigate('/revisor/registros_cargados');
           break;
         case 'administrador':
-          navigate('/');
+          navigate('/admin/panel');
+          break;
+        case 'jefe':
+          navigate('/jefe/panel');
           break;
         default:
-          setError('Rol de usuario no reconocido.');
-          setLoading(false);
+          throw new Error('Rol no reconocido');
       }
+
     } catch (err) {
-      //setError('Email o contraseña incorrectos.');
+      console.error('Error atrapado:', err);
+      setError(err.message || 'Error desconocido');
       setLoading(false);
     }
   };
-
 
 
   return (

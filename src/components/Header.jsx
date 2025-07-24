@@ -54,6 +54,7 @@ export default function Header() {
         <Link to="/" onClick={cerrarMenu}>Inicio</Link>
         <Link to="/delegado/registro_electoral" onClick={cerrarMenu}>Registro Electoral</Link>
         <Link to="/revisor/registros_cargados" onClick={cerrarMenu}>Revisor</Link>
+        <Link to="/jefesR/GestionUsuariosPage" onClick={cerrarMenu}>Gestion de cuentas</Link>
         <Link to="/resultados" onClick={cerrarMenu}>Resultados</Link>
         
         {user ? (

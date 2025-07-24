@@ -76,3 +76,30 @@ input:focus {
     transform: translateY(0);
   }
 }
+
+select {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1.8px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  background-color: #fff;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg fill='gray' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0l-4.25-4.65a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+}
+
+select:focus {
+  border-color: #007bff;
+}
+
+select:valid {
+  border-color: #007bff;
+  background-color: #f0f8ff; /* Azul muy claro para resaltar que ya se seleccionó algo */
+  font-weight: 600;
+  color: #222;
+}
+

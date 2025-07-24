@@ -11,7 +11,7 @@ import Test from './components/Test';
 import RegistroBoletasPage from './components/delegado/RegistroBoletasPage';
 import TestUploadExcel from './components/TestUploadExcel';
 import RevisorPage from './components/revisor/RevisoresPage';
-
+import JefeRPage from './components/jefesR/GestionUsuariosPage';
 
 
 
@@ -43,6 +43,7 @@ function AppContent() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/delegado/registro_electoral" element={<RegistroBoletasPage />} />
       <Route path="/revisor/registros_cargados" element={<RevisorPage />} />
+      <Route path="/jefesR/GestionUsuariosPage" element={<JefeRPage />} />
       <Route path="/test" element={<Test />} />
       <Route path="/test2" element={<TestUploadExcel />} />
 
