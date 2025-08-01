@@ -1,20 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from './firebaseConfig'; // importa tu config de firebase
+import { auth, db } from './firebaseConfig'; // incluye también 'db' para obtener datos del usuario
+import { doc, getDoc } from 'firebase/firestore';
 import styles from './Header.module.css';
 
 export default function Header() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null); // Datos adicionales del usuario (rol, nombre)
+  const [menuUsuarioAbierto, setMenuUsuarioAbierto] = useState(false);
   const navigate = useNavigate();
+  const avatarRef = useRef();
 
   const cerrarMenu = () => setMenuAbierto(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(currentUser => {
+    const unsubscribe = auth.onAuthStateChanged(async currentUser => {
       setUser(currentUser);
 
-      // Si no está logueado y no está en /login ni /signup, redirige a /login
+      if (currentUser) {
+        const userDocRef = doc(db, 'usuarios', currentUser.uid);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          setUserData(userSnap.data());
+        }
+      }
+
       const path = window.location.pathname;
       if (!currentUser && !path.startsWith('/login') && !path.startsWith('/signup')) {
         navigate('/login');
@@ -29,12 +40,23 @@ export default function Header() {
     navigate('/login');
   };
 
+  // Cierra el menú usuario al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target)) {
+        setMenuUsuarioAbierto(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <header className={styles.header}>
       <div className={styles.logo}>
         <Link to="/" onClick={cerrarMenu}>
-          <img 
-            src="/img/logo_libre.png" 
+          <img
+            src="/img/logo_libre.png"
             alt="Partido LIBRE Logo"
             className={styles.logoImg}
           />
@@ -51,16 +73,61 @@ export default function Header() {
       </button>
 
       <nav className={`${styles.nav} ${menuAbierto ? styles.abierto : ''}`}>
+        <a
+          href="https://chatgpt.com/g/g-67e3fe14c71c8191844fa99fe1ee3162-libre-al-cambio"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={cerrarMenu}
+        >
+          <img
+            src="/img/chat4.png"
+            alt="Chat personalizado GPT"
+            style={{ width: '24px', height: '24px', marginRight: '8px' }}
+          />
+          IA LIBRE
+        </a>
+
         <Link to="/" onClick={cerrarMenu}>Inicio</Link>
         <Link to="/delegado/registro_electoral" onClick={cerrarMenu}>Registro Electoral</Link>
         <Link to="/revisor/registros_cargados" onClick={cerrarMenu}>Revisor</Link>
-        <Link to="/jefesR/GestionUsuariosPage" onClick={cerrarMenu}>Gestion de cuentas</Link>
-        <Link to="/resultados" onClick={cerrarMenu}>Resultados</Link>
-        
+        <Link to="/jefesR/GestionUsuariosPage" onClick={cerrarMenu}>Gestión de cuentas</Link>
+        <Link to="/resultados/resultados_graficos" onClick={cerrarMenu}>Resultados</Link>
+
         {user ? (
-          <button onClick={handleLogout} className={styles.Btn}>
-            Salir
-          </button>
+          <div className={styles.usuarioWrapper} ref={avatarRef}>
+            <div
+              className={styles.avatarUsuario}
+              onClick={() => setMenuUsuarioAbierto(!menuUsuarioAbierto)}
+              title={user.email}
+            >
+              {user.email?.charAt(0).toUpperCase()}
+            </div>
+
+            {menuUsuarioAbierto && (
+              <>
+                {/*console.log('🧑‍💻 Usuario logueado:', user?.uid)*/}
+                {/*console.log('📬 Email:', user?.email)*/}
+                {/*console.log('📝 Datos en Firestore:', userData)*/}
+
+                <div className={styles.menuUsuario}>
+                  <div className={styles.usuarioInfo}>
+                    <strong>{user.email}</strong>
+
+                    {userData?.rol && <div>Rol: {userData.rol}</div>}
+
+                    {userData?.recintoNombre && (
+                      <div>Recinto: {userData.recintoNombre}</div>
+                    )}
+                  </div>
+
+                  <button onClick={handleLogout} className={styles.BtnSalir}>
+                    Salir
+                  </button>
+                </div>
+              </>
+            )}
+
+          </div>
         ) : (
           <>
             <Link to="/login" onClick={cerrarMenu}>Acceder</Link>

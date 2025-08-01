@@ -6,6 +6,7 @@
   --azul-oscuro2: #1C3978;
 }
 
+/* Header principal */
 .header {
   padding: 1rem 2rem;
   display: flex;
@@ -21,9 +22,17 @@
 }
 
 @keyframes gradientAnimation {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* Logo */
@@ -35,7 +44,7 @@
 .logo a {
   display: flex;
   align-items: center;
-  color: rgb(255, 255, 255);
+  color: #fff;
   text-decoration: none;
   font-weight: bold;
   font-size: 2.2rem;
@@ -53,6 +62,7 @@
   margin-right: 10px;
 }
 
+/* Menú Hamburguesa */
 .hamburguesa {
   display: none;
   background: rgba(255, 255, 255, 0.1);
@@ -71,7 +81,7 @@
   border-color: var(--rojo-fuerte);
 }
 
-/* Navegación principal */
+/* Navegación */
 .nav {
   display: flex;
   gap: 1.5rem;
@@ -105,7 +115,116 @@
   width: 100%;
 }
 
-/* ===== Responsivo ===== */
+/* Botón de salir */
+.BtnSalir {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--rojo-fuerte);
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.BtnSalir:hover:not(:disabled) {
+  background-color: var(--rojo-claro);
+}
+
+.BtnSalir:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Avatar */
+.avatarUsuario {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--rojo-fuerte);
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1rem;
+  border: 2px solid white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.avatarUsuario:hover {
+  background-color: #ffffff88;
+}
+
+/* Menú Usuario */
+.usuarioWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.menuUsuario {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  background-color: white;
+  color: var(--azul-oscuro2);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  z-index: 999;
+  min-width: 220px;
+  max-width: 90vw;
+  box-sizing: border-box;
+}
+
+@media screen and (max-width: 768px) {
+  .usuarioWrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .menuUsuario {
+    position: absolute;
+    top: 48px; /* debajo del avatar */
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100vw - 2rem);
+    max-width: 320px;
+    min-width: 260px;
+    box-sizing: border-box;
+    z-index: 999;
+  }
+}
+
+.usuarioInfo {
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.menuUsuario button {
+  background-color: var(--rojo-fuerte);
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.menuUsuario button:hover {
+  background-color: var(--rojo-claro);
+}
+
+/* =================== RESPONSIVO =================== */
 @media screen and (max-width: 768px) {
   .hamburguesa {
     display: block;
@@ -132,35 +251,25 @@
     padding: 0.5rem 0;
     font-size: 1.1rem;
   }
+
+  .menuUsuario {
+    right: 1rem;
+    top: 54px;
+    min-width: 90%;
+    max-width: 300px;
+  }
+
+  .uploads {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .BtnSalir {
+    font-size: 0.95rem;
+  }
 }
-
-.Btn {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: var(--rojo-fuerte);
-  color: white;
-  font-size: 1rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  box-sizing: border-box;
-}
-
-.Btn:hover:not(:disabled) {
-  background-color: var(--rojo-claro);
-}
-
-.Btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-
-
-
-
-
-
-

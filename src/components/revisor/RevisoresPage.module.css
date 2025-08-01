@@ -141,3 +141,104 @@ h2 {
     font-size: 0.8rem;
   }
 }
+
+/* Título plegable del card (acordeón) */
+.tituloCard {
+  background-color: #155FBF;
+  color: white;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.tituloCard:hover {
+  background-color: #0d3b8b;
+}
+
+/* Contenido expandido */
+.detalle {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #ccc;
+}
+
+/* Estilo para la segunda imagen */
+.imagenesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: center;
+}
+
+.imagenActa, .imagenHoja {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 6px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.15);
+}
+
+/* Totales y campos extra */
+.camposExtra p {
+  margin: 0.2rem 0;
+}
+
+/* Responsive para tarjetas */
+@media (max-width: 768px) {
+  .botones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .aprobarBtn, .rechazarBtn {
+    width: 100%;
+  }
+
+  .imagenesContainer {
+    flex-direction: column;
+  }
+
+  .tituloCard {
+    font-size: 1rem;
+  }
+
+  .detalle {
+    font-size: 0.95rem;
+  }
+}
+
+.zoomOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.zoomImagen {
+  max-width: 95%;
+  max-height: 95%;
+  border-radius: 8px;
+  box-shadow: 0 0 12px #fff;
+}
+
+.editBtn {
+  margin-left: 0.5rem;
+  background: none;
+  border: none;
+  color: #155FBF;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.editBtn:hover {
+  color: #0a2a63;
+  text-decoration: underline;
+}
+

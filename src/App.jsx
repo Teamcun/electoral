@@ -9,10 +9,12 @@ import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import Test from './components/Test';
 import RegistroBoletasPage from './components/delegado/RegistroBoletasPage';
-import TestUploadExcel from './components/TestUploadExcel';
+import TestUploadExcelv1 from './components/TestUploadExcel';
+import TestUploadExcelv2 from './components/TestUploadExcelv2';
+import StressTestPage from './components/StressTestPage';
 import RevisorPage from './components/revisor/RevisoresPage';
 import JefeRPage from './components/jefesR/GestionUsuariosPage';
-
+import ResultadosPage from './components/resultados/ResultadosPage';
 
 
 function Home() {
@@ -43,9 +45,12 @@ function AppContent() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/delegado/registro_electoral" element={<RegistroBoletasPage />} />
       <Route path="/revisor/registros_cargados" element={<RevisorPage />} />
+      <Route path="/resultados/resultados_graficos" element={<ResultadosPage />} />
       <Route path="/jefesR/GestionUsuariosPage" element={<JefeRPage />} />
       <Route path="/test" element={<Test />} />
-      <Route path="/test2" element={<TestUploadExcel />} />
+      <Route path="/testv1" element={<TestUploadExcelv1 />} />
+      <Route path="/testv2" element={<TestUploadExcelv2 />} />
+      <Route path="/testEstres" element={<StressTestPage />} />
 
     </Routes>
   );

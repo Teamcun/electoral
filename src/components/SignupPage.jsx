@@ -106,7 +106,7 @@ export default function SolicitarAccesoPage() {
       const municipioNombre = municipios.find(m => m.id === form.municipio)?.nombre || '';
       const recintoNombre = recintos.find(r => r.id === form.recinto)?.nombre || '';
 
-      await addDoc(collection(db, 'usuarios'), {
+      await addDoc(collection(db, 'solicitudes'), {
         nombre,
         email,
         celular,

@@ -1,5 +1,5 @@
 // src/pages/RegistroBoletasPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { db, storage, auth } from '../firebaseConfig';
 import {
     collection,
@@ -8,15 +8,19 @@ import {
     where,
     addDoc,
     serverTimestamp,
+    doc,
+    getDoc,
 } from 'firebase/firestore';
+import { onAuthStateChanged } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Loader from '../Loader';
 import styles from './RegistroBoletasPage.module.css';
 import Swal from 'sweetalert2';
 import { FaSearch } from 'react-icons/fa'
 import ClipLoader from 'react-spinners/ClipLoader';
-
-
+import Cropper from 'react-easy-crop';
+import getCroppedImg, { mejorarEstiloDocumento } from '../utils/cropImage';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const partidos = [
     'ALIANZA POPULAR (AP)',
@@ -47,8 +51,14 @@ export default function RegistroBoletasPage() {
         blancosPresidente: '',
         blancosDiputado: '',
         nulosPresidente: '',
+        nulosDiputado: '',         // nuevo
+        papeletasAnfora: '',       // nuevo
+        papeletasNoUtilizadas: '', // nuevo
         imagenActa: null,
+        imagenHojaTrabajo: null,
     });
+    const [previewActa, setPreviewActa] = useState(null);
+    const [previewHoja, setPreviewHoja] = useState(null);
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -64,6 +74,69 @@ export default function RegistroBoletasPage() {
     const [busquedaProv, setBusquedaProv] = useState('');
     const [busquedaMuni, setBusquedaMuni] = useState('');
     const [busquedaRecinto, setBusquedaRecinto] = useState('');
+
+    const [misBoletas, setMisBoletas] = useState([]);
+
+    const [imagenActaSrc, setImagenActaSrc] = useState(null);
+    const [imagenHojaSrc, setImagenHojaSrc] = useState(null);
+
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+    const [recortandoTipo, setRecortandoTipo] = useState(null); // 'acta' o 'hoja'
+
+    const handlePreview = (e, tipo) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (tipo === 'acta') {
+                setPreviewActa(reader.result);
+                setImagenActaSrc(reader.result);
+                setForm(prev => ({ ...prev, imagenActa: file })); // ✅ guardar archivo
+            } else {
+                setPreviewHoja(reader.result);
+                setImagenHojaSrc(reader.result);
+                setForm(prev => ({ ...prev, imagenHojaTrabajo: file })); // ✅ guardar archivo
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const onCropComplete = useCallback((_, croppedArea) => {
+        setCroppedAreaPixels(croppedArea);
+    }, []);
+
+    const iniciarRecorte = (tipo) => {
+        setRecortandoTipo(tipo);
+        setZoom(1);
+        setCrop({ x: 0, y: 0 });
+    };
+
+    const urlToFile = async (dataUrl, filename) => {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        return new File([blob], filename, { type: blob.type });
+    };
+
+    const aplicarRecorte = async () => {
+        const originalSrc = recortandoTipo === 'acta' ? imagenActaSrc : imagenHojaSrc;
+        const resultado = await getCroppedImg(originalSrc, croppedAreaPixels);
+        const mejorado = await mejorarEstiloDocumento(resultado);
+        const fileFinal = await urlToFile(mejorado, `${recortandoTipo}_${Date.now()}.jpg`);
+
+        if (recortandoTipo === 'acta') {
+            setPreviewActa(mejorado);
+            setForm(prev => ({ ...prev, imagenActa: fileFinal }));
+        } else {
+            setPreviewHoja(mejorado);
+            setForm(prev => ({ ...prev, imagenHojaTrabajo: fileFinal }));
+        }
+
+        setRecortandoTipo(null);
+    };
 
     // 👇 Y aquí inmediatamente después, los filtros
     const departamentosFiltrados = departamentos.filter(d =>
@@ -96,6 +169,58 @@ export default function RegistroBoletasPage() {
         };
         cargarDepartamentos();
     }, []);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                console.log('Usuario autenticado:', user.uid);
+                await cargarBoletasUsuario(user);
+            } else {
+                console.log('Usuario no autenticado');
+                setMisBoletas([]);
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    const cargarBoletasUsuario = async (user) => {
+        try {
+            const userDocRef = doc(db, 'usuarios', user.uid);
+            const userSnap = await getDoc(userDocRef);
+            if (!userSnap.exists()) {
+                console.log('No existe documento usuario');
+                setMisBoletas([]);
+                return;
+            }
+
+            const userData = userSnap.data();
+            const esJefeRecinto = userData.rol === 'jefe_recinto';
+            const recintoId = userData.recinto;
+
+            let boletasQuery;
+            if (esJefeRecinto && recintoId) {
+                boletasQuery = query(
+                    collection(db, 'recepcion'),
+                    where('recinto', '==', recintoId)
+                );
+            } else {
+                boletasQuery = query(
+                    collection(db, 'recepcion'),
+                    where('idUsuarioRecepcion', '==', user.uid)
+                );
+            }
+
+            const snap = await getDocs(boletasQuery);
+            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            data.sort((a, b) => parseInt(a.nroMesa) - parseInt(b.nroMesa));
+            setMisBoletas(data);
+
+        } catch (error) {
+            console.error('Error cargando registros del usuario:', error);
+        }
+    };
 
     // Cargar combos dependientes
     useEffect(() => {
@@ -145,6 +270,8 @@ export default function RegistroBoletasPage() {
         cargar();
     }, []);
 
+
+
     const handleChange = async (e) => {
         const { name, value, files, dataset } = e.target;
 
@@ -158,8 +285,17 @@ export default function RegistroBoletasPage() {
                 ...prev,
                 votosDiputado: { ...prev.votosDiputado, [name]: value },
             }));
-        } else if (name === 'imagenActa') {
-            setForm(prev => ({ ...prev, imagenActa: files[0] }));
+        } else if (name === 'imagenActa' || name === 'imagenHojaTrabajo') {
+            const file = files[0];
+            if (file) {
+                setForm(prev => ({ ...prev, [name]: file }));
+
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    name === 'imagenActa' ? setPreviewActa(reader.result) : setPreviewHoja(reader.result);
+                };
+                reader.readAsDataURL(file);
+            }
         } else if (name === 'recinto') {
             const recintoSeleccionado = recintos.find(r => r.id === value);
 
@@ -216,43 +352,104 @@ export default function RegistroBoletasPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!form.imagenActa) {
+        if (!form.imagenActa || !form.imagenHojaTrabajo) {
             await Swal.fire({
                 icon: 'warning',
-                title: 'Archivo requerido',
-                text: 'Debes subir el acta.',
+                title: 'Archivos requeridos',
+                text: 'Debes subir el acta y la hoja de trabajo.',
                 confirmButtonColor: '#d33',
             });
             return;
         }
 
-        // Validar tamaño máximo de 3 MB
+        const archivos = [
+            { archivo: form.imagenActa, nombre: 'Acta' },
+            { archivo: form.imagenHojaTrabajo, nombre: 'Hoja de Trabajo' },
+        ];
         const MAX_TAMANO_MB = 3;
-        const tamanoArchivoMB = form.imagenActa.size / (1024 * 1024);
-
-        if (tamanoArchivoMB > MAX_TAMANO_MB) {
-            await Swal.fire({
-                icon: 'warning',
-                title: 'Archivo demasiado grande',
-                text: 'El archivo no debe superar los 3 MB.',
-                confirmButtonColor: '#d33',
-            });
-            return;
+        for (const { archivo, nombre } of archivos) {
+            const tamanoMB = archivo.size / (1024 * 1024);
+            if (tamanoMB > MAX_TAMANO_MB) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: `Archivo demasiado grande`,
+                    text: `El archivo de ${nombre} no debe superar los 3 MB.`,
+                    confirmButtonColor: '#d33',
+                });
+                return;
+            }
         }
 
         try {
             setSubmitting(true);
-            const refFile = ref(storage, `actas/${form.nroMesa}_${Date.now()}`);
-            await uploadBytes(refFile, form.imagenActa);
-            const url = await getDownloadURL(refFile);
 
-            const { imagenActa, ...formSinImagen } = form;
+            // ✅ Obtener UID y verificar autenticación
+            const user = auth.currentUser;
+            if (!user) throw new Error('Usuario no autenticado');
+
+            // ✅ Obtener recinto del usuario
+            const userDocRef = doc(db, 'usuarios', user.uid);
+            const userSnap = await getDoc(userDocRef);
+            if (!userSnap.exists()) throw new Error('Usuario no encontrado');
+
+            const userData = userSnap.data();
+            // 🔍 Log para identificar al usuario que intenta subir el registro
+            console.log('🧑 Usuario intentando subir registro:', {
+                uid: user.uid,
+                nombre: userData.nombre,
+                email: userData.email,
+                recintoId: userData.recintoId,
+                recintoNombre: userData.recintoNombre,
+                rol: userData.rol,
+            });
+
+            const recintoIdUsuario = userData.recintoId;
+
+            // ✅ Verificar si se está intentando registrar en otro recinto (solo permitido el suyo)
+            if (form.recinto !== recintoIdUsuario) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Recinto inválido',
+                    text: 'Solo puedes registrar boletas en tu propio recinto.',
+                    confirmButtonColor: '#d33',
+                });
+                return;
+            }
+
+            // ✅ Verificar si ya existe una boleta para este recinto y nroMesa
+            const q = query(
+                collection(db, 'recepcion'),
+                where('recinto', '==', recintoIdUsuario),
+                where('nroMesa', '==', form.nroMesa)
+            );
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Número de mesa duplicado',
+                    text: `Ya se ha registrado una boleta con el número de mesa ${form.nroMesa} en tu recinto.`,
+                    confirmButtonColor: '#d33',
+                });
+                return;
+            }
+
+            // 🟢 Continuar con carga de imágenes y registro...
+            const refActa = ref(storage, `actas/${form.nroMesa}_${Date.now()}`);
+            await uploadBytes(refActa, form.imagenActa);
+            const urlActa = await getDownloadURL(refActa);
+
+            const refHoja = ref(storage, `hojas_trabajo/${form.nroMesa}_${Date.now()}`);
+            await uploadBytes(refHoja, form.imagenHojaTrabajo);
+            const urlHoja = await getDownloadURL(refHoja);
+
+            const { imagenActa, imagenHojaTrabajo, ...formSinImagenes } = form;
 
             await addDoc(collection(db, 'recepcion'), {
-                ...formSinImagen,
-                imagenActaUrl: url,
+                ...formSinImagenes,
+                imagenActaUrl: urlActa,
+                imagenHojaTrabajoUrl: urlHoja,
                 creadoEn: serverTimestamp(),
-                idUsuarioRecepcion: auth.currentUser?.uid ?? 'anon',
+                idUsuarioRecepcion: user.uid,
                 estado: 'pendiente',
             });
 
@@ -262,7 +459,6 @@ export default function RegistroBoletasPage() {
                 text: 'La boleta fue enviada correctamente.',
                 confirmButtonColor: '#0a58ca',
             });
-            //setForm(estadoInicialForm);
 
         } catch (err) {
             console.error(err);
@@ -277,12 +473,175 @@ export default function RegistroBoletasPage() {
         }
     };
 
+    const RecorteBotones = ({ aplicarRecorte, cancelarRecorte }) => {
+        return (
+            <>
+                <motion.button
+                    className={`${styles.botonRecorte} ${styles.botonAplicar}`}
+                    onClick={aplicarRecorte}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 30 }}
+                    transition={{ duration: 0.4 }}
+                    type="button"
+                >
+                    ✅ Aplicar
+                </motion.button>
+
+                <motion.button
+                    className={`${styles.botonRecorte} ${styles.botonCancelar}`}
+                    onClick={cancelarRecorte}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 30 }}
+                    transition={{ duration: 0.4 }}
+                    type="button"
+                >
+                    ❌ Cancelar
+                </motion.button>
+            </>
+        );
+    };
+
+
 
     return (
         <div className={styles['select-group']}>
             <h2>Registro de Boleta Electoral</h2>
 
             <form onSubmit={handleSubmit} className={styles.form}>
+                {/* 📸 Subir imágenes */}
+
+                {/* ===== Foto del Acta ===== */}
+                <div>
+                    <label>Foto del Acta:</label>
+                    <div className={styles.selectorContainer}>
+                        {/* Botón para tomar con cámara */}
+                        <label className={styles.iconButton}>
+                            📷 Cámara
+                            <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={(e) => handlePreview(e, 'acta')}
+                                style={{ display: 'none' }}
+                            />
+                        </label>
+
+                        {/* Botón para seleccionar de galería */}
+                        <label className={styles.iconButton}>
+                            🖼️ Galería
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handlePreview(e, 'acta')}
+                                style={{ display: 'none' }}
+                            />
+                        </label>
+                    </div>
+
+                    <AnimatePresence>
+                        {previewActa && !recortandoTipo && (
+                            <motion.div
+                                key="previewActa"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <img
+                                    src={previewActa}
+                                    alt="Vista previa acta"
+                                    className={styles.imagenPreview}
+                                />
+                                <br />
+                                <button
+                                    type="button"
+                                    onClick={() => iniciarRecorte('acta')}
+                                    style={{ marginTop: 5 }}
+                                >
+                                    ✂️ Recortar Acta
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* ===== Foto de la Hoja de Trabajo ===== */}
+                <div>
+                    <label>Foto de la Hoja de Trabajo:</label>
+                    <div className={styles.selectorContainer}>
+                        {/* Botón para tomar con cámara */}
+                        <label className={styles.iconButton}>
+                            📷 Cámara
+                            <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={(e) => handlePreview(e, 'hoja')}
+                                style={{ display: 'none' }}
+                            />
+                        </label>
+
+                        {/* Botón para seleccionar de galería */}
+                        <label className={styles.iconButton}>
+                            🖼️ Galería
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handlePreview(e, 'hoja')}
+                                style={{ display: 'none' }}
+                            />
+                        </label>
+                    </div>
+
+                    <AnimatePresence>
+                        {previewHoja && !recortandoTipo && (
+                            <motion.div
+                                key="previewHoja"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <img
+                                    src={previewHoja}
+                                    alt="Vista previa hoja"
+                                    className={styles.imagenPreview}
+                                />
+                                <br />
+                                <button
+                                    type="button"
+                                    onClick={() => iniciarRecorte('hoja')}
+                                    style={{ marginTop: 5 }}
+                                >
+                                    ✂️ Recortar Hoja
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* Recorte */}
+                {recortandoTipo && (
+                    <div style={{ position: 'relative', width: '100%', height: 300, marginBottom: 20 }}>
+                        <Cropper
+                            image={recortandoTipo === 'acta' ? imagenActaSrc : imagenHojaSrc}
+                            crop={crop}
+                            zoom={zoom}
+                            aspect={4 / 3}
+                            onCropChange={setCrop}
+                            onZoomChange={setZoom}
+                            onCropComplete={onCropComplete}
+                        />
+
+                        <RecorteBotones
+                            aplicarRecorte={aplicarRecorte}
+                            cancelarRecorte={() => setRecortandoTipo(null)}
+                        />
+                    </div>
+                )}
+
                 <div className={styles.columnas}>
                     {/* Departamento */}
                     <label>
@@ -395,18 +754,6 @@ export default function RegistroBoletasPage() {
                             required
                         />
                     </label>
-
-                    {/* Subir foto */}
-                    <label>
-                        Subir Foto del Acta:
-                        <input
-                            type="file"
-                            name="imagenActa"
-                            accept="image/*"
-                            onChange={handleChange}
-                            required
-                        />
-                    </label>
                 </div>
 
 
@@ -414,7 +761,11 @@ export default function RegistroBoletasPage() {
                 <div className={styles.tablaVotos}>
                     <table>
                         <thead>
-                            <tr><th>Partido</th><th>Presidente</th><th>Diputado</th></tr>
+                            <tr>
+                                <th>Partido</th>
+                                <th>Presidente</th>
+                                <th>Diputado</th>
+                            </tr>
                         </thead>
                         <tbody>
                             {partidos.map((p) => (
@@ -440,9 +791,25 @@ export default function RegistroBoletasPage() {
                                     </td>
                                 </tr>
                             ))}
+
+                            {/* Fila de totales */}
+                            <tr style={{ fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
+                                <td>Total</td>
+                                <td>
+                                    {
+                                        Object.values(form.votosPresidente).reduce((acc, val) => acc + (parseInt(val) || 0), 0)
+                                    }
+                                </td>
+                                <td>
+                                    {
+                                        Object.values(form.votosDiputado).reduce((acc, val) => acc + (parseInt(val) || 0), 0)
+                                    }
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
+
 
                 {/* Totales */}
                 <div className={styles.totales}>
@@ -451,6 +818,15 @@ export default function RegistroBoletasPage() {
                     <label>Blancos Presidente: <input name="blancosPresidente" type="number" value={form.blancosPresidente} onChange={handleChange} required /></label>
                     <label>Blancos Diputado: <input name="blancosDiputado" type="number" value={form.blancosDiputado} onChange={handleChange} required /></label>
                     <label>Nulos Presidente: <input name="nulosPresidente" type="number" value={form.nulosPresidente} onChange={handleChange} required /></label>
+                    <label>Nulos Diputado:
+                        <input name="nulosDiputado" type="number" value={form.nulosDiputado} onChange={handleChange} required />
+                    </label>
+                    <label>Papeletas en ánfora (utilizadas):
+                        <input name="papeletasAnfora" type="number" value={form.papeletasAnfora} onChange={handleChange} required />
+                    </label>
+                    <label>Papeletas no utilizadas:
+                        <input name="papeletasNoUtilizadas" type="number" value={form.papeletasNoUtilizadas} onChange={handleChange} required />
+                    </label>
                 </div>
 
                 {/* Botón de envío */}
@@ -464,7 +840,38 @@ export default function RegistroBoletasPage() {
                 </button>
 
             </form>
-        </div>
+
+            {console.log('📋 Datos de boletas:', misBoletas)}
+            {
+                misBoletas.length > 0 && (
+                    <>
+                        {console.log('🔍 Total de boletas cargadas:', misBoletas.length)}
+                        {console.log('📋 Datos de boletas:', misBoletas)}
+
+                        <div className={styles.seccionBoletas}>
+                            <h3 style={{ marginTop: '2rem' }}>Registros Enviados</h3>
+                            <div className={styles.boletasGrid}>
+                                {misBoletas.map((b) => {
+                                    console.log(`🧾 Mesa ${b.nroMesa}:`, b);
+                                    return (
+                                        <div key={b.id} className={styles.boletaItem}>
+                                            <div className={styles.boletaBarra}>
+                                                <span className={styles.nroMesa}>Mesa {b.nroMesa}</span>
+                                                {b.estado === 'pendiente' && (
+                                                    <span className={styles.checkIcon}>✔️</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </>
+                )
+            }
+
+
+        </div >
     );
 
 }

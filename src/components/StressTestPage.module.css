@@ -1,0 +1,115 @@
+.container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border: 2px solid #1D3973;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(21, 95, 191, 0.15);
+  text-align: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.uploads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.uploadBox {
+  flex: 1;
+  min-width: 280px;
+  background: #f7faff;
+  border: 2px solid #155FBF;
+  border-radius: 10px;
+  padding: 1.2rem;
+  box-shadow: 0 4px 12px rgba(21, 95, 191, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.uploadBox:hover {
+  box-shadow: 0 6px 20px rgba(29, 57, 115, 0.2);
+}
+
+.uploadTitle {
+  margin-bottom: 0.8rem;
+  color: #1C3978;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  border-bottom: 1px solid #155FBF;
+  padding-bottom: 0.5rem;
+}
+
+.uploadInput {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1.5px dashed #1D3973;
+  border-radius: 8px;
+  background-color: #ffffff;
+  cursor: pointer;
+  color: #1C3978;
+  font-weight: 500;
+  transition: border-color 0.3s;
+}
+
+.uploadInput:hover {
+  border-color: #155FBF;
+}
+
+/* BOTÓN ESPECÍFICO PARA STRESS TEST */
+.btn-stress {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(45deg, #155FBF, #1D3973);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0.5rem;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 10px rgba(21, 95, 191, 0.4);
+}
+
+.btn-stress:hover:not(:disabled) {
+  background: linear-gradient(45deg, #1D3973, #155FBF);
+  transform: scale(1.04);
+  box-shadow: 0 6px 18px rgba(29, 57, 115, 0.65);
+}
+
+.btn-stress:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.spinnerContainer {
+  margin-top: 2rem;
+}
+
+.resultados {
+  margin-top: 2rem;
+  padding: 1.2rem 1.5rem;
+  background-color: #f0f8ff;
+  border: 2px solid #155FBF;
+  border-radius: 10px;
+  text-align: left;
+  color: #1C3978;
+  font-weight: 600;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(21, 95, 191, 0.15);
+}
+
+.buttons {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
