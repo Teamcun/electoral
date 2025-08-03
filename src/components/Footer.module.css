@@ -1,7 +1,20 @@
 .footer {
-  background-color: #007bff;
-  color: white;
+  background-color: #2E3C74; /* Azul oscuro LIBRE */
+  color: #FFFFFF;            /* Texto blanco */
+  font-family: 'Novera Black', serif;
+  font-weight: 900;
+  font-size: 1.1rem;
   text-align: center;
-  padding: 1rem;
+  padding: 1.2rem 1rem;
   margin-top: 3rem;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.15);
+  user-select: none;
+  transition: background-color 0.3s ease;
+}
+
+.footer:hover {
+  background-color: #BE0A2D; /* Rojo fuerte LIBRE en hover */
+  cursor: default;
 }

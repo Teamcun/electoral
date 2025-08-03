@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebaseConfig';
+import { db, auth } from '../firebaseConfig';
 import {
   collection,
   getDocs,
@@ -7,13 +7,19 @@ import {
   where,
   doc,
   getDoc,
-  updateDoc
+  updateDoc,
+  addDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import Swal from 'sweetalert2';
 import Loader from '../Loader';
 import styles from './RevisoresPage.module.css';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function RevisoresPage() {
+  const navigate = useNavigate();
+
   const [boletas, setBoletas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [procesandoId, setProcesandoId] = useState(null);
@@ -26,6 +32,49 @@ export default function RevisoresPage() {
   const [nombresProvincias, setNombresProvincias] = useState({});
   const [nombresMunicipios, setNombresMunicipios] = useState({});
   const [nombresRecintos, setNombresRecintos] = useState({});
+  const [nombresUsuarios, setNombresUsuarios] = useState({});
+  const [usuarioActual, setUsuarioActual] = useState(null);
+
+  // Cargar usuario actual y redirigir si no tiene permiso
+  useEffect(() => {
+    const cargarDatosUsuario = async () => {
+      const uid = auth.currentUser?.uid;
+      if (!uid) return navigate('/');
+
+      const docSnap = await getDoc(doc(db, 'usuarios', uid));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setUsuarioActual(data);
+
+        // Redirigir si no es admin ni jefe de recinto
+        if (data.rol !== 'administrador' && data.rol !== 'revisor') {
+          navigate('/');
+        }
+      } else {
+        navigate('/');
+      }
+    };
+    cargarDatosUsuario();
+  }, [navigate, auth]);
+
+  const registrarHistorial = async ({ boletaId, accion, campo, valorAnterior, valorNuevo }) => {
+    const usuario = auth.currentUser;
+    if (!usuario) return;
+
+    try {
+      await addDoc(collection(db, 'historial'), {
+        boletaId,
+        accion,
+        campo,
+        valorAnterior,
+        valorNuevo,
+        usuarioId: usuario.uid,
+        timestamp: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('Error al registrar historial:', err);
+    }
+  };
 
   useEffect(() => {
     const fetchNombres = async (coleccion, ids) => {
@@ -52,6 +101,7 @@ export default function RevisoresPage() {
         const provinciasIds = [...new Set(data.map(b => b.provincia))];
         const municipiosIds = [...new Set(data.map(b => b.municipio))];
         const recintosIds = [...new Set(data.map(b => b.recinto))];
+        const idUsuarioRecepcion = [...new Set(data.map(b => b.idUsuarioRecepcion).filter(Boolean))];
 
         const [deptosNombres, circunsNombres, provinciasNombres, municipiosNombres, recintosNombres] = await Promise.all([
           fetchNombres('departamentos', deptosIds),
@@ -61,11 +111,31 @@ export default function RevisoresPage() {
           fetchNombres('recintos', recintosIds),
         ]);
 
+        const usuariosNombres = {};
+        //console.log('🟡 Cargando nombres de usuarios para los siguientes IDs:', idUsuarioRecepcion);
+        for (const id of idUsuarioRecepcion) {
+          const usuarioRef = doc(db, 'usuarios', id);
+          const usuarioSnap = await getDoc(usuarioRef);
+
+          if (usuarioSnap.exists()) {
+            const userData = usuarioSnap.data();
+            //console.log(`✅ Usuario encontrado [${id}]:`, userData);
+
+            usuariosNombres[id] = userData.nombre || userData.email || 'Sin nombre';
+          } else {
+            //console.warn(`⚠️ Usuario no encontrado para ID: ${id}`);
+            usuariosNombres[id] = 'Desconocido';
+          }
+        }
+
+        console.log('🟢 Resultado final usuariosNombres:', usuariosNombres);
+
         setNombresDepartamentos(deptosNombres);
         setNombresCircunscripciones(circunsNombres);
         setNombresProvincias(provinciasNombres);
         setNombresMunicipios(municipiosNombres);
         setNombresRecintos(recintosNombres);
+        setNombresUsuarios(usuariosNombres);
         setBoletas(data);
       } catch (error) {
         console.error('Error cargando boletas:', error);
@@ -92,6 +162,15 @@ export default function RevisoresPage() {
     try {
       setProcesandoId(id);
       await updateDoc(doc(db, 'recepcion', id), { estado: nuevoEstado });
+
+      await registrarHistorial({
+        boletaId: id,
+        accion: `marcar como ${nuevoEstado}`,
+        campo: 'estado',
+        valorAnterior: 'pendiente',
+        valorNuevo: nuevoEstado
+      });
+
       setBoletas(prev => prev.filter(b => b.id !== id));
       Swal.fire('¡Listo!', `Boleta ${nuevoEstado}`, 'success');
     } catch (error) {
@@ -115,6 +194,15 @@ export default function RevisoresPage() {
     if (value !== undefined) {
       try {
         await updateDoc(doc(db, 'recepcion', boleta.id), { [campo]: parseInt(value) });
+
+        await registrarHistorial({
+          boletaId: boleta.id,
+          accion: 'editar campo',
+          campo,
+          valorAnterior: boleta[campo],
+          valorNuevo: parseInt(value)
+        });
+
         setBoletas(prev => prev.map(b => b.id === boleta.id ? { ...b, [campo]: parseInt(value) } : b));
         Swal.fire('Actualizado', `${campo} editado`, 'success');
       } catch (err) {
@@ -125,17 +213,29 @@ export default function RevisoresPage() {
 
   const editarVoto = async (boleta, tipo, partido) => {
     const campo = tipo === 'presidente' ? 'votosPresidente' : 'votosDiputado';
+    const anterior = boleta[campo]?.[partido] || 0;
+
     const { value } = await Swal.fire({
       title: `Editar votos ${tipo} (${partido})`,
       input: 'number',
-      inputValue: boleta[campo]?.[partido] || 0,
+      inputValue: anterior,
       inputAttributes: { min: 0 },
       showCancelButton: true
     });
+
     if (value !== undefined) {
       const nuevoCampo = { ...(boleta[campo] || {}), [partido]: parseInt(value) };
       try {
         await updateDoc(doc(db, 'recepcion', boleta.id), { [campo]: nuevoCampo });
+
+        await registrarHistorial({
+          boletaId: boleta.id,
+          accion: 'editar voto',
+          campo: `${campo}.${partido}`,
+          valorAnterior: anterior,
+          valorNuevo: parseInt(value)
+        });
+
         setBoletas(prev => prev.map(b => b.id === boleta.id ? { ...b, [campo]: nuevoCampo } : b));
       } catch (err) {
         Swal.fire('Error', 'No se pudo editar el voto.', 'error');
@@ -175,6 +275,7 @@ export default function RevisoresPage() {
                 </div>
                 {abierta && (
                   <div className={styles.detalle}>
+                    <p><strong>Subido por:</strong> {nombresUsuarios[boleta.idUsuarioRecepcion] || 'Desconocido'}</p>
                     <p><strong>Departamento:</strong> {nombresDepartamentos[boleta.departamento]}</p>
                     <p><strong>Circunscripción:</strong> {nombresCircunscripciones[boleta.circunscripcion]}</p>
                     <p><strong>Provincia:</strong> {nombresProvincias[boleta.provincia]}</p>
@@ -199,7 +300,7 @@ export default function RevisoresPage() {
                       </tbody>
                     </table>
 
-                    {['blancosPresidente','blancosDiputado','nulosPresidente','validosPresidente','validosDiputado'].map(campo => (
+                    {['blancosPresidente', 'blancosDiputado', 'nulosPresidente', 'validosPresidente', 'validosDiputado'].map(campo => (
                       <p key={campo}><strong>{campo}:</strong> {boleta[campo]}
                         <button onClick={() => editarCampo(boleta, campo)} className={styles.editBtn}>✎</button></p>
                     ))}

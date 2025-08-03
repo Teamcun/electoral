@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import styles from './SignupPage.module.css';
+import Swal from 'sweetalert2';
+
 
 export default function SolicitarAccesoPage() {
   const [nombre, setNombre] = useState('');
@@ -92,20 +94,54 @@ export default function SolicitarAccesoPage() {
     };
     cargar();
   }, [form.municipio]);
-
+////funcion para subir la solicitud
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccessMsg('');
     setLoading(true);
 
     try {
+      // Validar duplicado en solicitudes
+      const solicitudesQuery = query(
+        collection(db, 'solicitudes'),
+        where('email', '==', email)
+      );
+      const solicitudesSnap = await getDocs(solicitudesQuery);
+
+      if (!solicitudesSnap.empty) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Correo duplicado',
+          text: 'Ya existe una solicitud pendiente con este correo.',
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Validar duplicado en usuarios habilitados
+      const usuariosQuery = query(
+        collection(db, 'usuarios'),
+        where('email', '==', email)
+      );
+      const usuariosSnap = await getDocs(usuariosQuery);
+
+      if (!usuariosSnap.empty) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Correo en uso',
+          text: 'Este correo ya está registrado como usuario habilitado.',
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Obtener nombres por ID
       const departamentoNombre = departamentos.find(d => d.id === form.departamento)?.nombre || '';
       const circunscripcionNombre = circunscripciones.find(c => c.id === form.circunscripcion)?.nombre || '';
       const provinciaNombre = provincias.find(p => p.id === form.provincia)?.nombre || '';
       const municipioNombre = municipios.find(m => m.id === form.municipio)?.nombre || '';
       const recintoNombre = recintos.find(r => r.id === form.recinto)?.nombre || '';
 
+      // Enviar solicitud
       await addDoc(collection(db, 'solicitudes'), {
         nombre,
         email,
@@ -125,7 +161,13 @@ export default function SolicitarAccesoPage() {
         fechaSolicitud: serverTimestamp(),
       });
 
-      setSuccessMsg('Solicitud enviada. Espera la aprobación del administrador.');
+      await Swal.fire({
+        icon: 'success',
+        title: 'Solicitud enviada',
+        text: 'Espera la aprobación del administrador.',
+      });
+
+      // Limpiar formulario
       setNombre('');
       setEmail('');
       setCelular('');
@@ -136,8 +178,13 @@ export default function SolicitarAccesoPage() {
         municipio: '',
         recinto: '',
       });
+
     } catch (err) {
-      setError('Error al enviar la solicitud: ' + err.message);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al enviar',
+        text: err.message,
+      });
     } finally {
       setLoading(false);
     }

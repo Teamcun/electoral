@@ -21,6 +21,7 @@ import ClipLoader from 'react-spinners/ClipLoader';
 import Cropper from 'react-easy-crop';
 import getCroppedImg, { mejorarEstiloDocumento } from '../utils/cropImage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const partidos = [
     'ALIANZA POPULAR (AP)',
@@ -37,6 +38,7 @@ const partidos = [
 ];
 
 export default function RegistroBoletasPage() {
+    const navigate = useNavigate();
     const [form, setForm] = useState({
         departamento: '',
         circunscripcion: '',
@@ -74,6 +76,8 @@ export default function RegistroBoletasPage() {
     const [busquedaProv, setBusquedaProv] = useState('');
     const [busquedaMuni, setBusquedaMuni] = useState('');
     const [busquedaRecinto, setBusquedaRecinto] = useState('');
+    const [mesasDisponibles, setMesasDisponibles] = useState([]);
+
 
     const [misBoletas, setMisBoletas] = useState([]);
 
@@ -85,6 +89,33 @@ export default function RegistroBoletasPage() {
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
     const [recortandoTipo, setRecortandoTipo] = useState(null); // 'acta' o 'hoja'
+    const [userData, setUserData] = useState(null);
+    const [usuarioActual, setUsuarioActual] = useState(null);
+
+
+    // Cargar usuario actual y redirigir si no tiene permiso
+    useEffect(() => {
+        const cargarDatosUsuario = async () => {
+            const uid = auth.currentUser?.uid;
+            if (!uid) return navigate('/');
+
+            const docSnap = await getDoc(doc(db, 'usuarios', uid));
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setUsuarioActual(data);
+
+                // Redirigir si no es admin ni jefe de recinto
+                if (data.rol !== 'administrador' && data.rol !== 'delegado' && data.rol !== 'jefe_recinto') {
+                    navigate('/');
+                }
+            } else {
+                navigate('/');
+            }
+        };
+        cargarDatosUsuario();
+    }, [navigate, auth]);
+
+
 
     const handlePreview = (e, tipo) => {
         const file = e.target.files[0];
@@ -138,65 +169,123 @@ export default function RegistroBoletasPage() {
         setRecortandoTipo(null);
     };
 
-    // 👇 Y aquí inmediatamente después, los filtros
+
+    // Filtra departamentos que contengan el texto buscado (sin importar mayúsculas/minúsculas)
     const departamentosFiltrados = departamentos.filter(d =>
         d.nombre.toLowerCase().includes(busquedaDepto.toLowerCase())
     );
 
+    // Filtra circunscripciones que contengan el texto buscado
     const circunscripcionesFiltradas = circunscripciones.filter(c =>
         c.nombre.toLowerCase().includes(busquedaCirc.toLowerCase())
     );
 
+    // Filtra provincias que contengan el texto buscado
     const provinciasFiltradas = provincias.filter(p =>
         p.nombre.toLowerCase().includes(busquedaProv.toLowerCase())
     );
 
+    // Filtra municipios que contengan el texto buscado
     const municipiosFiltrados = municipios.filter(m =>
         m.nombre.toLowerCase().includes(busquedaMuni.toLowerCase())
     );
 
+    // Filtra recintos que contengan el texto buscado
     const recintosFiltrados = recintos.filter(r =>
         r.nombre.toLowerCase().includes(busquedaRecinto.toLowerCase())
     );
 
 
-    // Carga inicial
+    // Carga inicial de departamentos al montar el componente
     useEffect(() => {
+        // Función asíncrona para obtener documentos de la colección 'departamentos'
         const cargarDepartamentos = async () => {
             const snap = await getDocs(collection(db, 'departamentos'));
+            // Mapear documentos y actualizar estado con lista de departamentos
             setDepartamentos(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            setLoading(false);
+            setLoading(false); // Indicar que la carga terminó
         };
-        cargarDepartamentos();
-    }, []);
+        cargarDepartamentos(); // Ejecutar la función
+    }, []); // Se ejecuta solo una vez al montar el componente
 
+
+    // Listener para detectar cambios en el estado de autenticación del usuario
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
                 console.log('Usuario autenticado:', user.uid);
+                // Cargar las boletas asociadas al usuario autenticado
                 await cargarBoletasUsuario(user);
             } else {
                 console.log('Usuario no autenticado');
-                setMisBoletas([]);
+                setMisBoletas([]); // Limpiar boletas si no hay usuario
             }
         });
 
+        // Limpieza del listener cuando se desmonte el componente
         return () => unsubscribe();
-    }, []);
+    }, []); // Solo al montar el componente
 
+    //cargar datos al form
+    useEffect(() => {
+        const cargarMesasDesdeRecinto = async () => {
+            try {
+                setLoading(true);
+
+                const mesasSnap = await getDocs(
+                    query(collection(db, 'mesas'), where('idRecinto', '==', userData.recintoId))
+                );
+
+                const mesas = mesasSnap.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    }))
+                    .sort((a, b) => parseInt(b.codigo) - parseInt(a.codigo)); // 👈 Orden descendente
+
+                setMesasDisponibles(mesas);
+                console.log('Mesas disponibles cargadas y ordenadas:', mesas);
+
+            } catch (error) {
+                console.error('Error al cargar mesas desde el useEffect:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (userData) {
+            // Setear el formulario con los datos jerárquicos
+            setForm(prev => ({
+                ...prev,
+                departamento: userData.departamentoId,
+                circunscripcion: userData.circunscripcionId,
+                provincia: userData.provinciaId,
+                municipio: userData.municipioId,
+                recinto: userData.recintoId,
+            }));
+
+            // Cargar mesas disponibles
+            cargarMesasDesdeRecinto();
+        }
+    }, [userData]);
+
+
+    // Función para cargar boletas asociadas al usuario actual
     const cargarBoletasUsuario = async (user) => {
         try {
             const userDocRef = doc(db, 'usuarios', user.uid);
             const userSnap = await getDoc(userDocRef);
+
             if (!userSnap.exists()) {
                 console.log('No existe documento usuario');
                 setMisBoletas([]);
                 return;
             }
 
-            const userData = userSnap.data();
-            const esJefeRecinto = userData.rol === 'jefe_recinto';
-            const recintoId = userData.recinto;
+            const data = userSnap.data();
+            setUserData(data); // ⬅️ Guardamos los datos del usuario
+
+            const esJefeRecinto = data.rol === 'jefe_recinto';
+            const recintoId = data.recintoId;
 
             let boletasQuery;
             if (esJefeRecinto && recintoId) {
@@ -212,78 +301,126 @@ export default function RegistroBoletasPage() {
             }
 
             const snap = await getDocs(boletasQuery);
-            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            data.sort((a, b) => parseInt(a.nroMesa) - parseInt(b.nroMesa));
-            setMisBoletas(data);
+            const dataBoletas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            dataBoletas.sort((a, b) => parseInt(a.nroMesa) - parseInt(b.nroMesa));
+            setMisBoletas(dataBoletas);
 
         } catch (error) {
             console.error('Error cargando registros del usuario:', error);
         }
     };
 
-    // Cargar combos dependientes
+
+    // Cargar departamento del usuario
     useEffect(() => {
-        if (!form.departamento) return;
+        if (!userData?.departamentoId) return;
+
         const cargar = async () => {
-            setLoading(true);
-            const q = query(collection(db, 'circunscripciones'), where('idDepartamento', '==', form.departamento));
-            const snap = await getDocs(q);
-            setCircunscripciones(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            setLoading(false);
+            const ref = doc(db, 'departamentos', userData.departamentoId);
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+                setDepartamentos([{ id: snap.id, ...snap.data() }]);
+            }
         };
         cargar();
-    }, [form.departamento]);
+    }, [userData]);
 
+    // Cargar circunscripción
     useEffect(() => {
-        if (!form.circunscripcion) return;
+        if (!userData?.circunscripcionId) return;
+
         const cargar = async () => {
-            setLoading(true);
-            const q = query(collection(db, 'provincias'), where('idCircunscripcion', '==', form.circunscripcion));
-            const snap = await getDocs(q);
-            setProvincias(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            setLoading(false);
+            const ref = doc(db, 'circunscripciones', userData.circunscripcionId);
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+                setCircunscripciones([{ id: snap.id, ...snap.data() }]);
+            }
         };
         cargar();
-    }, [form.circunscripcion]);
+    }, [userData]);
 
+    // Cargar provincia
     useEffect(() => {
-        if (!form.provincia) return;
+        if (!userData?.provinciaId) return;
+
         const cargar = async () => {
-            setLoading(true);
-            const q = query(collection(db, 'municipios'), where('idProvincia', '==', form.provincia));
-            const snap = await getDocs(q);
-            setMunicipios(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            setLoading(false);
+            const ref = doc(db, 'provincias', userData.provinciaId);
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+                setProvincias([{ id: snap.id, ...snap.data() }]);
+            }
         };
         cargar();
-    }, [form.provincia]);
+    }, [userData]);
 
+    // Cargar municipio
     useEffect(() => {
+        if (!userData?.municipioId) return;
+
         const cargar = async () => {
-            setLoading(true);
-            const q = query(collection(db, 'recintos'));
-            const snap = await getDocs(q);
-            setRecintos(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            setLoading(false);
+            const ref = doc(db, 'municipios', userData.municipioId);
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+                setMunicipios([{ id: snap.id, ...snap.data() }]);
+            }
         };
         cargar();
-    }, []);
+    }, [userData]);
 
+    // Cargar recinto
+    useEffect(() => {
+        if (!userData?.recintoId) return;
+
+        const cargar = async () => {
+            const ref = doc(db, 'recintos', userData.recintoId);
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+                setRecintos([{ id: snap.id, ...snap.data() }]);
+            }
+            setLoading(false); // Solo terminamos de cargar cuando todo esté listo
+        };
+        cargar();
+    }, [userData]);
+
+    // Función para mostrar advertencia con Swal
+    const advertirSiInconsistente = (campo, votosTotales, papeletas) => {
+        if (votosTotales > papeletas) {
+            Swal.fire({
+                icon: 'warning',
+                title: `¡Advertencia en ${campo}!`,
+                text: `La suma de votos (${votosTotales}) supera las papeletas en ánfora (${papeletas}).`,
+                confirmButtonText: 'Entendido',
+                timer: 4000,
+            });
+        }
+    };
+    // Helper para setear color rojo si hay error, sino quitar color
+    const marcarInputError = (inputName, tieneError) => {
+        const input = document.querySelector(`[name="${inputName}"]`);
+        if (input) {
+            input.style.borderColor = tieneError ? 'red' : '';
+        }
+    };
 
 
     const handleChange = async (e) => {
         const { name, value, files, dataset } = e.target;
 
-        if (dataset.tipo === 'presidente') {
+        if (dataset?.tipo === 'presidente') {
             setForm(prev => ({
                 ...prev,
-                votosPresidente: { ...prev.votosPresidente, [name]: value },
+                votosPresidente: {
+                    ...prev.votosPresidente,
+                    [name]: value,
+                },
             }));
-        } else if (dataset.tipo === 'diputado') {
+        } else if (dataset?.tipo === 'diputado') {
             setForm(prev => ({
                 ...prev,
-                votosDiputado: { ...prev.votosDiputado, [name]: value },
+                votosDiputado: {
+                    ...prev.votosDiputado,
+                    [name]: value,
+                },
             }));
         } else if (name === 'imagenActa' || name === 'imagenHojaTrabajo') {
             const file = files[0];
@@ -292,62 +429,146 @@ export default function RegistroBoletasPage() {
 
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    name === 'imagenActa' ? setPreviewActa(reader.result) : setPreviewHoja(reader.result);
+                    if (name === 'imagenActa') {
+                        setPreviewActa(reader.result);
+                    } else {
+                        setPreviewHoja(reader.result);
+                    }
                 };
                 reader.readAsDataURL(file);
             }
-        } else if (name === 'recinto') {
-            const recintoSeleccionado = recintos.find(r => r.id === value);
+        } else if (
+            [
+                'validosPresidente',
+                'validosDiputado',
+                'blancosPresidente',
+                'blancosDiputado',
+                'nulosPresidente',
+                'nulosDiputado',
+                'papeletasAnfora',
+                'papeletasNoUtilizadas',
+            ].includes(name)
+        ) {
+            if (value === '' || (/^\d+$/.test(value) && Number(value) >= 0)) {
+                setForm(prev => {
+                    const nuevoForm = { ...prev, [name]: value };
 
-            if (recintoSeleccionado) {
-                try {
-                    setLoading(true);
-
-                    // Obtener MUNICIPIO del recinto
-                    const municipioSnap = await getDocs(
-                        query(collection(db, 'municipios'), where('__name__', '==', recintoSeleccionado.idMunicipio))
+                    const sumaVotosPresidente = Object.values(nuevoForm.votosPresidente || {}).reduce(
+                        (acc, val) => acc + (parseInt(val) || 0), 0
                     );
-                    const municipioDoc = municipioSnap.docs[0];
-                    const idProvincia = municipioDoc.data().idProvincia;
-
-                    // Obtener PROVINCIA del municipio
-                    const provinciaSnap = await getDocs(
-                        query(collection(db, 'provincias'), where('__name__', '==', idProvincia))
+                    const sumaVotosDiputado = Object.values(nuevoForm.votosDiputado || {}).reduce(
+                        (acc, val) => acc + (parseInt(val) || 0), 0
                     );
-                    const provinciaDoc = provinciaSnap.docs[0];
-                    const idCircunscripcion = provinciaDoc.data().idCircunscripcion;
 
-                    // Obtener CIRCUNSCRIPCIÓN de la provincia
-                    const circSnap = await getDocs(
-                        query(collection(db, 'circunscripciones'), where('__name__', '==', idCircunscripcion))
-                    );
-                    const circDoc = circSnap.docs[0];
-                    const idDepartamento = circDoc.data().idDepartamento;
+                    if (!nuevoForm.validosPresidente || nuevoForm.validosPresidente === '') {
+                        nuevoForm.validosPresidente = sumaVotosPresidente.toString();
+                    }
+                    if (!nuevoForm.validosDiputado || nuevoForm.validosDiputado === '') {
+                        nuevoForm.validosDiputado = sumaVotosDiputado.toString();
+                    }
 
-                    // Actualizar formulario con autocompletado
-                    setForm(prev => ({
-                        ...prev,
-                        recinto: value,
-                        municipio: municipioDoc.id,
-                        provincia: provinciaDoc.id,
-                        circunscripcion: circDoc.id,
-                        departamento: idDepartamento,
-                    }));
-                } catch (error) {
-                    console.error('Error al autocompletar desde recinto:', error);
-                } finally {
-                    setLoading(false);
-                }
-            } else {
-                // Si no se encontró recinto, solo actualizar campo recinto
-                setForm(prev => ({ ...prev, recinto: value }));
+                    const papeletasPresidente =
+                        (parseInt(nuevoForm.validosPresidente) || 0) +
+                        (parseInt(nuevoForm.blancosPresidente) || 0) +
+                        (parseInt(nuevoForm.nulosPresidente) || 0);
+
+                    const papeletasDiputado =
+                        (parseInt(nuevoForm.validosDiputado) || 0) +
+                        (parseInt(nuevoForm.blancosDiputado) || 0) +
+                        (parseInt(nuevoForm.nulosDiputado) || 0);
+
+                    const maxPapeletas = Math.max(papeletasPresidente, papeletasDiputado);
+                    nuevoForm.papeletasAnfora = maxPapeletas.toString();
+
+                    advertirSiInconsistente('Presidente', papeletasPresidente, maxPapeletas);
+                    advertirSiInconsistente('Diputado', papeletasDiputado, maxPapeletas);
+
+                    marcarInputError('validosPresidente', papeletasPresidente > maxPapeletas);
+                    marcarInputError('blancosPresidente', papeletasPresidente > maxPapeletas);
+                    marcarInputError('nulosPresidente', papeletasPresidente > maxPapeletas);
+
+                    marcarInputError('validosDiputado', papeletasDiputado > maxPapeletas);
+                    marcarInputError('blancosDiputado', papeletasDiputado > maxPapeletas);
+                    marcarInputError('nulosDiputado', papeletasDiputado > maxPapeletas);
+
+                    marcarInputError('papeletasAnfora', false);
+
+                    return nuevoForm;
+                });
             }
         } else {
-            // Para otros campos simples
             setForm(prev => ({ ...prev, [name]: value }));
         }
     };
 
+
+    /*
+    // 👇 antiguo protocolo de carga de datos los filtros
+    // useEffect para cargar circunscripciones dependientes del departamento seleccionado
+    useEffect(() => {
+        if (!form.departamento) return; // Si no hay departamento seleccionado, no hacer nada
+
+        const cargar = async () => {
+            setLoading(true); // Indicar carga en progreso
+            // Consulta filtrando circunscripciones por departamento seleccionado
+            const q = query(collection(db, 'circunscripciones'), where('idDepartamento', '==', form.departamento));
+            const snap = await getDocs(q);
+            setCircunscripciones(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))); // Actualizar estado
+            setLoading(false); // Fin de carga
+        };
+
+        cargar(); // Ejecutar la función de carga
+    }, [form.departamento]); // Se ejecuta cada vez que cambia el departamento
+
+
+    // useEffect para cargar provincias según circunscripción seleccionada
+    useEffect(() => {
+        if (!form.circunscripcion) return;
+
+        const cargar = async () => {
+            setLoading(true);
+            // Consulta filtrando provincias por circunscripción seleccionada
+            const q = query(collection(db, 'provincias'), where('idCircunscripcion', '==', form.circunscripcion));
+            const snap = await getDocs(q);
+            setProvincias(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setLoading(false);
+        };
+
+        cargar();
+    }, [form.circunscripcion]); // Se ejecuta al cambiar la circunscripción
+
+
+    // useEffect para cargar municipios según provincia seleccionada
+    useEffect(() => {
+        if (!form.provincia) return;
+
+        const cargar = async () => {
+            setLoading(true);
+            // Consulta filtrando municipios por provincia seleccionada
+            const q = query(collection(db, 'municipios'), where('idProvincia', '==', form.provincia));
+            const snap = await getDocs(q);
+            setMunicipios(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setLoading(false);
+        };
+
+        cargar();
+    }, [form.provincia]); // Se ejecuta al cambiar la provincia
+
+
+    // useEffect para cargar recintos (sin filtro, todos)
+    useEffect(() => {
+        const cargar = async () => {
+            setLoading(true);
+            const q = query(collection(db, 'recintos')); // Trae todos los recintos
+            const snap = await getDocs(q);
+            setRecintos(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setLoading(false);
+        };
+
+        cargar(); // Se ejecuta una vez al montar el componente
+    }, []);
+
+    */
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -357,6 +578,16 @@ export default function RegistroBoletasPage() {
                 icon: 'warning',
                 title: 'Archivos requeridos',
                 text: 'Debes subir el acta y la hoja de trabajo.',
+                confirmButtonColor: '#d33',
+            });
+            return;
+        }
+
+        if (!form.nroMesa) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'Número de mesa requerido',
+                text: 'Debes seleccionar el número de mesa.',
                 confirmButtonColor: '#d33',
             });
             return;
@@ -393,6 +624,7 @@ export default function RegistroBoletasPage() {
             if (!userSnap.exists()) throw new Error('Usuario no encontrado');
 
             const userData = userSnap.data();
+
             // 🔍 Log para identificar al usuario que intenta subir el registro
             console.log('🧑 Usuario intentando subir registro:', {
                 uid: user.uid,
@@ -406,6 +638,11 @@ export default function RegistroBoletasPage() {
             const recintoIdUsuario = userData.recintoId;
 
             // ✅ Verificar si se está intentando registrar en otro recinto (solo permitido el suyo)
+            console.log('Comparando recinto:', {
+                recintoSeleccionadoEnFormulario: form.recinto,
+                recintoAsignadoAlUsuario: recintoIdUsuario
+            });
+
             if (form.recinto !== recintoIdUsuario) {
                 await Swal.fire({
                     icon: 'warning',
@@ -433,7 +670,7 @@ export default function RegistroBoletasPage() {
                 return;
             }
 
-            // 🟢 Continuar con carga de imágenes y registro...
+            // 🟢 Subir imágenes
             const refActa = ref(storage, `actas/${form.nroMesa}_${Date.now()}`);
             await uploadBytes(refActa, form.imagenActa);
             const urlActa = await getDownloadURL(refActa);
@@ -460,6 +697,26 @@ export default function RegistroBoletasPage() {
                 confirmButtonColor: '#0a58ca',
             });
 
+            // ✅ Limpiar formulario
+            setForm({
+                recinto: recintoIdUsuario,
+                nroMesa: '',
+                votosPresidente: {},
+                votosDiputado: {},
+                validosPresidente: '',
+                validosDiputado: '',
+                blancosPresidente: '',
+                blancosDiputado: '',
+                nulosPresidente: '',
+                nulosDiputado: '',
+                papeletasAnfora: '',
+                papeletasNoUtilizadas: '',
+                imagenActa: null,
+                imagenHojaTrabajo: null,
+            });
+            setPreviewActa(null);
+            setPreviewHoja(null);
+
         } catch (err) {
             console.error(err);
             await Swal.fire({
@@ -472,6 +729,7 @@ export default function RegistroBoletasPage() {
             setSubmitting(false);
         }
     };
+
 
     const RecorteBotones = ({ aplicarRecorte, cancelarRecorte }) => {
         return (
@@ -642,119 +900,58 @@ export default function RegistroBoletasPage() {
                     </div>
                 )}
 
-                <div className={styles.columnas}>
-                    {/* Departamento */}
-                    <label>
-                        Departamento:
-                        <div className="input-icon-wrapper">
-                            <FaSearch size={16} />
-                            <input
-                                type="text"
-                                placeholder="Buscar departamento..."
-                                value={busquedaDepto}
-                                onChange={(e) => setBusquedaDepto(e.target.value)}
-                            />
-                        </div>
-                        <select name="departamento" value={form.departamento} onChange={handleChange} required disabled={form.recinto}>
-                            <option value="">-- Selecciona --</option>
-                            {departamentosFiltrados.map(d => (
-                                <option key={d.id} value={d.id}>{d.nombre}</option>
-                            ))}
-                        </select>
-                    </label>
+                {/* Información del recinto y ubicación asignada al usuario */}
+                {userData && (
+                    <div className={styles.columnas}>
+                        <label>
+                            Departamento:
+                            <input type="text" value={userData.departamentoNombre} disabled />
+                            <input type="hidden" name="departamento" value={userData.departamentoId} />
+                        </label>
 
-                    {/* Circunscripción */}
-                    <label>
-                        Circunscripción:
-                        <div className="input-icon-wrapper">
-                            <FaSearch size={16} />
-                            <input
-                                type="text"
-                                placeholder="Buscar circunscripción..."
-                                value={busquedaCirc}
-                                onChange={(e) => setBusquedaCirc(e.target.value)}
-                            />
-                        </div>
-                        <select name="circunscripcion" value={form.circunscripcion} onChange={handleChange} required disabled={form.recinto}>
-                            <option value="">-- Selecciona --</option>
-                            {circunscripcionesFiltradas.map(c => (
-                                <option key={c.id} value={c.id}>{c.nombre}</option>
-                            ))}
-                        </select>
-                    </label>
+                        <label>
+                            Circunscripción:
+                            <input type="text" value={userData.circunscripcionNombre} disabled />
+                            <input type="hidden" name="circunscripcion" value={userData.circunscripcionId} />
+                        </label>
 
-                    {/* Provincia */}
-                    <label>
-                        Provincia:
-                        <div className="input-icon-wrapper">
-                            <FaSearch size={16} />
-                            <input
-                                type="text"
-                                placeholder="Buscar provincia..."
-                                value={busquedaProv}
-                                onChange={(e) => setBusquedaProv(e.target.value)}
-                            />
-                        </div>
-                        <select name="provincia" value={form.provincia} onChange={handleChange} required disabled={form.recinto}>
-                            <option value="">-- Selecciona --</option>
-                            {provinciasFiltradas.map(p => (
-                                <option key={p.id} value={p.id}>{p.nombre}</option>
-                            ))}
-                        </select>
-                    </label>
+                        <label>
+                            Provincia:
+                            <input type="text" value={userData.provinciaNombre} disabled />
+                            <input type="hidden" name="provincia" value={userData.provinciaId} />
+                        </label>
 
-                    {/* Municipio */}
-                    <label>
-                        Municipio:
-                        <div className="input-icon-wrapper">
-                            <FaSearch size={16} />
-                            <input
-                                type="text"
-                                placeholder="Buscar municipio..."
-                                value={busquedaMuni}
-                                onChange={(e) => setBusquedaMuni(e.target.value)}
-                            />
-                        </div>
-                        <select name="municipio" value={form.municipio} onChange={handleChange} required disabled={form.recinto}>
-                            <option value="">-- Selecciona --</option>
-                            {municipiosFiltrados.map(m => (
-                                <option key={m.id} value={m.id}>{m.nombre}</option>
-                            ))}
-                        </select>
-                    </label>
+                        <label>
+                            Municipio:
+                            <input type="text" value={userData.municipioNombre} disabled />
+                            <input type="hidden" name="municipio" value={userData.municipioId} />
+                        </label>
 
-                    {/* Recinto */}
-                    <label>
-                        Recinto:
-                        <div className="input-icon-wrapper">
-                            <FaSearch size={16} />
-                            <input
-                                type="text"
-                                placeholder="Buscar recinto..."
-                                value={busquedaRecinto}
-                                onChange={(e) => setBusquedaRecinto(e.target.value)}
-                            />
-                        </div>
-                        <select name="recinto" value={form.recinto} onChange={handleChange} required>
-                            <option value="">-- Selecciona --</option>
-                            {recintosFiltrados.map(r => (
-                                <option key={r.id} value={r.id}>{r.nombre}</option>
-                            ))}
-                        </select>
-                    </label>
+                        <label>
+                            Recinto:
+                            <input type="text" value={userData.recintoNombre} disabled />
+                            <input type="hidden" name="recinto" value={userData.recintoId} />
+                        </label>
 
-                    {/* Número de mesa */}
-                    <label>
-                        Número de Mesa:
-                        <input
-                            type="text"
-                            name="nroMesa"
-                            value={form.nroMesa}
-                            onChange={handleChange}
-                            required
-                        />
-                    </label>
-                </div>
+                        {/* Número de Mesa */}
+                        <label>
+                            Número de Mesa:
+                            <select
+                                name="nroMesa"
+                                value={form.nroMesa}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">-- Selecciona una mesa --</option>
+                                {mesasDisponibles.map(mesa => (
+                                    <option key={mesa.id} value={mesa.codigo}>
+                                        Mesa {mesa.codigo}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    </div>
+                )}
 
 
                 {/* Tabla de votos por partido */}
@@ -841,18 +1038,18 @@ export default function RegistroBoletasPage() {
 
             </form>
 
-            {console.log('📋 Datos de boletas:', misBoletas)}
+            {/*console.log('📋 Datos de boletas:', misBoletas)*/}
             {
                 misBoletas.length > 0 && (
                     <>
-                        {console.log('🔍 Total de boletas cargadas:', misBoletas.length)}
-                        {console.log('📋 Datos de boletas:', misBoletas)}
+                        {/*console.log('🔍 Total de boletas cargadas:', misBoletas.length)*/}
+                        {/*console.log('📋 Datos de boletas:', misBoletas)*/}
 
                         <div className={styles.seccionBoletas}>
                             <h3 style={{ marginTop: '2rem' }}>Registros Enviados</h3>
                             <div className={styles.boletasGrid}>
                                 {misBoletas.map((b) => {
-                                    console.log(`🧾 Mesa ${b.nroMesa}:`, b);
+                                    {/*console.log(`🧾 Mesa ${b.nroMesa}:`, b);*/ }
                                     return (
                                         <div key={b.id} className={styles.boletaItem}>
                                             <div className={styles.boletaBarra}>

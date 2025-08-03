@@ -1,0 +1,101 @@
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.8rem 2rem;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.titulo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1d3973;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Aquí aplicamos el estilo que prefieres para las subsecciones */
+.subcard {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #ffffff;
+  border-left: 4px solid #1d3973;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.subcard h4 {
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.listaDiputados {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.8rem;
+}
+
+.listaDiputados li {
+  margin-bottom: 1.2rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  transition: background-color 0.25s ease;
+  cursor: pointer;
+}
+
+.listaDiputados li:hover {
+  background-color: #f0f4ff;
+}
+
+.listaDetalles {
+  list-style: none;
+  padding-left: 1.8rem;
+  margin-top: 0.5rem;
+  border-left: 3px solid #e1e1e1;
+  background-color: #fafafa;
+  border-radius: 0 8px 8px 0;
+}
+
+.listaDetalles li {
+  padding: 0.3rem 0;
+  font-size: 0.95rem;
+  color: #555;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+}
+
+.itemDetalle span {
+  flex: 1 1 auto;
+}
+
+.itemDetalle strong {
+  margin-left: 1rem;
+  white-space: nowrap;
+}
+
+svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 1rem 1.2rem;
+  }
+  .titulo {
+    font-size: 1.3rem;
+  }
+  .subcard h4 {
+    font-size: 1.1rem;
+  }
+}
+
+.pieContainer {
+  max-width: 600px; 
+  margin: 1.5rem auto; /* centrado horizontal */
+}
+
+
+

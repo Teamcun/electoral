@@ -4,7 +4,7 @@
   text-align: center;
   background-image: url('/img/intro_6.jpg');
   background-size: cover;
-  background-position: top center; /* Mostrar la parte superior de la imagen */
+  background-position: top center;
   color: white;
   overflow: hidden;
 }
@@ -13,10 +13,39 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(10, 25, 47, 0.55); /* Menos opacidad para que se note más la imagen */
+  background: rgba(10, 25, 47, 0.55);
+  /* capa oscura */
   z-index: 0;
 }
 
+/* Animación de entrada */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* === Estilos internos === */
 .title,
 .subtitle,
 .button {
@@ -27,27 +56,50 @@
 }
 
 .title {
-  color: #FFFFFF;
-  font-size: 3rem;
+  font-family: 'Novera Black', sans-serif;
   font-weight: 900;
-  margin-bottom: 1rem;
-  animation-delay: 0.2s;
-  animation-fill-mode: both;
-  letter-spacing: 1.2px;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 1rem;
+
+  color: white;
+  /* Color fijo */
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  /* Contraste en fondos oscuros */
+
+  /* Eliminamos gradiente y animación */
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  animation: none;
 }
 
+/* SUBTÍTULO MEJORADO */
 .subtitle {
   color: #f0f0f0;
-  font-size: 1.3rem;
-  margin-bottom: 2.5rem;
+  font-size: clamp(1.1rem, 1.3vw, 1.5rem);
+  /* tamaño responsive */
   max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto 2.5rem auto;
+  /* centrado horizontal y margen abajo */
+  line-height: 1.6;
+  font-style: italic;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  /* sombra para mejor contraste */
+  padding: 0 1rem;
+  /* para que no quede pegado a los bordes en pantallas pequeñas */
   animation-delay: 0.4s;
   animation-fill-mode: both;
-  line-height: 1.6;
+  user-select: none;
+  /* para que no se seleccione accidentalmente */
 }
 
+
+/* BOTÓN */
 .button {
   background: linear-gradient(45deg, #155FBF, #1D3973);
   color: white;
@@ -62,6 +114,7 @@
   animation-fill-mode: both;
   box-shadow: 0 6px 18px rgba(21, 95, 191, 0.6);
   text-transform: uppercase;
+  text-decoration: none;
 }
 
 .button:hover {
@@ -70,16 +123,34 @@
   box-shadow: 0 10px 30px rgba(29, 57, 115, 0.85);
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.subtitle {
+  font-size: 18px;
+  color: white;
+  text-align: center;
+  margin-bottom: 20px;
+  font-style: italic;
+  min-height: 50px;
+  white-space: pre-line;
 }
 
+.cursor {
+  display: inline-block;
+  margin-left: 2px;
+  width: 8px;
+  background-color: white;
+  animation: blink 1s infinite;
+}
 
+@keyframes blink {
 
+  0%,
+  50%,
+  100% {
+    opacity: 1;
+  }
+
+  25%,
+  75% {
+    opacity: 0;
+  }
+}

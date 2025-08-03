@@ -1,36 +1,111 @@
+/* Contenedor de la tarjeta usuario */
 .card {
-  background: #f9f9f9;
-  border: 1.5px solid #ddd;
+  background-color: #f9f9f9;
+  border-radius: 8px;
   padding: 1rem 1.5rem;
-  border-radius: 12px;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
 
-.card p {
-  margin: 0.25rem 0;
-  color: #555;
+/* Información del usuario */
+.card > div {
+  flex: 1 1 60%;
+  min-width: 250px;
 }
 
-.card strong {
-  color: #1d3973;
-  font-size: 1.1rem;
-}
-
+/* Botones */
 .button {
-  background-color: #007bff;
-  color: white;
-  padding: 0.6rem 1rem;
+  background-color: #BE0A2D; /* rojo LIBRE */
   border: none;
-  border-radius: 8px;
+  color: white;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 700;
   transition: background-color 0.3s ease;
+  margin-left: 1rem;
+  white-space: nowrap;
 }
 
 .button:hover {
-  background-color: #0056b3;
+  background-color: #8B071D;
 }
+
+.buttonSecundario {
+  background-color: #2E3C74; /* azul oscuro LIBRE */
+  border: none;
+  color: white;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  margin-left: 0.5rem;
+  transition: background-color 0.3s ease;
+  white-space: nowrap;
+}
+
+.buttonSecundario:hover {
+  background-color: #DA0608;
+}
+
+/* Etiqueta del rol, texto oscuro, fondo transparente */
+.rolEtiqueta {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  display: inline-block;
+  min-width: 90px;
+  text-align: center;
+  user-select: none;
+
+  color: #222; /* texto oscuro para legibilidad */
+  border: 2px solid transparent;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* Colores con borde y sombra, texto oscuro */
+.rol_administrador {
+  border-color: #da3806; /* rojo LIBRE */
+  box-shadow: 0 0 8px #BE0A2D55;
+}
+
+.rol_jefe_recinto {
+  border-color: #2E3C74; /* azul oscuro LIBRE */
+  box-shadow: 0 0 8px #2E3C7455;
+}
+
+.rol_revisor {
+  border-color: #5893F3; /* azul claro LIBRE */
+  box-shadow: 0 0 8px #5893F355;
+}
+
+.rol_delegado {
+  border-color: #e7e5e5; /* rojo intenso LIBRE */
+  box-shadow: 0 0 8px #92929255;
+}
+
+/* Responsive: en pantallas pequeñas ajustamos layout */
+@media (max-width: 600px) {
+  .card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .button, .buttonSecundario {
+    margin-left: 0;
+    margin-top: 0.7rem;
+  }
+}
+
+
+
+
+
+
+

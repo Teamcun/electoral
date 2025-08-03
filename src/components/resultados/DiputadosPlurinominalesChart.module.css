@@ -1,0 +1,30 @@
+.detalleDHondt {
+  margin-top: 1rem;
+  background-color: #f9faff;
+  border: 1px solid #c5d1ff;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.pasoActual p {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.tablaValores {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tablaValores th,
+.tablaValores td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.tablaValores th {
+  background-color: #e0e7ff;
+  font-weight: 700;
+}

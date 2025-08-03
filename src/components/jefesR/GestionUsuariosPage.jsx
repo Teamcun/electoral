@@ -8,14 +8,13 @@ import {
   setDoc,
   deleteDoc,
 } from 'firebase/firestore';
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-} from 'firebase/auth';
-import { db } from '../firebaseConfig';
+import { getAuth, createUserWithEmailAndPassword, deleteUser } from 'firebase/auth';
+import { db, auth, firebaseConfig } from '../firebaseConfig';
+import { initializeApp } from 'firebase/app';
 import Swal from 'sweetalert2';
 import UsuarioCard from '../UsuarioCard';
 import { useNavigate } from 'react-router-dom';
+import styles from './GestionUsuariosPage.module.css';
 
 export default function GestionUsuariosPage() {
   const auth = getAuth();
@@ -92,52 +91,112 @@ export default function GestionUsuariosPage() {
     if (usuarioActual) cargarUsuarios();
   }, [usuarioActual]);
 
-
-  // Habilitar solicitud: crear cuenta Auth + mover datos a usuarios + borrar solicitud
-  const habilitarUsuario = async (usuario) => {
-    const resultado = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: `Vas a habilitar a ${usuario.nombre} con rol "delegado" y contraseña su número celular.`,
-      icon: 'question',
+  const cambiarRolUsuario = async (usuario) => {
+    const { value: nuevoRol } = await Swal.fire({
+      title: `Cambiar rol de ${usuario.nombre}`,
+      input: 'select',
+      inputOptions: {
+        delegado: 'Delegado',
+        revisor: 'Revisor',
+        jefe_recinto: 'Jefe de recinto',
+      },
+      inputPlaceholder: 'Selecciona un nuevo rol',
+      inputValue: usuario.rol,
       showCancelButton: true,
-      confirmButtonText: 'Sí, habilitar',
+      confirmButtonText: 'Cambiar',
       cancelButtonText: 'Cancelar',
     });
 
-    if (!resultado.isConfirmed) return;
+    if (!nuevoRol || nuevoRol === usuario.rol) return;
 
     try {
-      // Crear usuario en Authentication
+      await updateDoc(doc(db, 'usuarios', usuario.id), {
+        rol: nuevoRol,
+      });
+
+      Swal.fire('Rol actualizado', `Nuevo rol: ${nuevoRol}`, 'success');
+      cargarUsuarios();
+    } catch (error) {
+      console.error('Error al actualizar rol:', error);
+      Swal.fire('Error', 'No se pudo actualizar el rol.', 'error');
+    }
+  };
+
+
+
+  const habilitarUsuario = async (usuario) => {
+    let rolSeleccionado = 'delegado';
+
+    if (usuarioActual.rol === 'administrador') {
+      const { value: rol } = await Swal.fire({
+        title: `Asignar rol a ${usuario.nombre}`,
+        input: 'select',
+        inputOptions: {
+          delegado: 'Delegado',
+          revisor: 'Revisor',
+          jefe_recinto: 'Jefe de recinto',
+        },
+        inputPlaceholder: 'Selecciona un rol',
+        showCancelButton: true,
+        confirmButtonText: 'Habilitar',
+        cancelButtonText: 'Cancelar',
+      });
+
+      if (!rol) return;
+      rolSeleccionado = rol;
+    } else {
+      const confirm = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: `Vas a habilitar a ${usuario.nombre} con rol "delegado" y contraseña su número celular.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, habilitar',
+        cancelButtonText: 'Cancelar',
+      });
+
+      if (!confirm.isConfirmed) return;
+    }
+
+    try {
+      // Crear app secundaria para crear usuario sin cerrar sesión del admin
+      const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
+      const secondaryAuth = getAuth(secondaryApp);
+
       const cred = await createUserWithEmailAndPassword(
-        auth,
+        secondaryAuth,
         usuario.email,
         usuario.celular
       );
+
       const nuevoUID = cred.user.uid;
 
-      // Copiar datos a la colección 'usuarios' con el UID nuevo como id
       const datosUsuario = {
         ...usuario,
-        rol: 'delegado',
+        rol: rolSeleccionado,
         habilitado: true,
       };
-      delete datosUsuario.id; // para evitar conflicto con doc id
+      delete datosUsuario.id;
 
       await setDoc(doc(db, 'usuarios', nuevoUID), datosUsuario);
-
-      // Borrar solicitud de la colección 'solicitudes'
       await deleteDoc(doc(db, 'solicitudes', usuario.id));
+
+      // Cerrar sesión del usuario creado para mantener activo al admin
+      await secondaryAuth.signOut();
+      // Liberar recursos
+      secondaryApp.delete?.();
 
       Swal.fire(
         '¡Usuario habilitado!',
-        'Se ha creado su cuenta y asignado rol delegado.',
+        `Se ha creado su cuenta y asignado rol "${rolSeleccionado}".`,
         'success'
       );
+
       cargarUsuarios();
     } catch (error) {
       Swal.fire('Error', error.message, 'error');
     }
   };
+
 
   // Filtro combinado por recinto y celular
   const filtrarUsuarios = (usuarios) => {
@@ -158,63 +217,60 @@ export default function GestionUsuariosPage() {
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <div className={styles.container}>
       <h2>Filtro por recinto electoral y celular</h2>
-      <div style={{ marginBottom: '2rem' }}>
+      <div className={styles.filtros}>
         <input
           type="text"
           placeholder="Filtrar por recinto electoral"
           value={filtroRecinto}
           onChange={(e) => setFiltroRecinto(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            marginBottom: '1rem',
-            borderRadius: '6px',
-            border: '1.5px solid #ccc',
-          }}
         />
         <input
           type="text"
           placeholder="Filtrar por número de celular"
           value={filtroCelular}
           onChange={(e) => setFiltroCelular(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            borderRadius: '6px',
-            border: '1.5px solid #ccc',
-          }}
         />
       </div>
 
       <h2>Solicitudes Pendientes</h2>
       {loading ? (
-        <p>Cargando...</p>
+        <p className={styles.mensaje}>Cargando...</p>
       ) : filtrarUsuarios(usuariosPendientes).length === 0 ? (
-        <p>No hay solicitudes pendientes con ese filtro</p>
+        <p className={styles.mensaje}>No hay solicitudes pendientes con ese filtro</p>
       ) : (
-        filtrarUsuarios(usuariosPendientes).map((u) => (
-          <UsuarioCard
-            key={u.id}
-            usuario={u}
-            puedeHabilitar
-            onHabilitar={habilitarUsuario}
-          />
-        ))
+        <div className={styles.listaUsuarios}>
+          {filtrarUsuarios(usuariosPendientes).map((u) => (
+            <UsuarioCard
+              key={u.id}
+              usuario={u}
+              puedeHabilitar
+              onHabilitar={habilitarUsuario}
+            />
+          ))}
+        </div>
       )}
 
-      <hr style={{ margin: '3rem 0' }} />
+      <hr className={styles.separador} />
 
       <h2>Usuarios Habilitados</h2>
       {loading ? (
-        <p>Cargando...</p>
+        <p className={styles.mensaje}>Cargando...</p>
       ) : filtrarUsuarios(usuariosHabilitados).length === 0 ? (
-        <p>No hay usuarios habilitados con ese filtro</p>
+        <p className={styles.mensaje}>No hay usuarios habilitados con ese filtro</p>
       ) : (
-        filtrarUsuarios(usuariosHabilitados).map((u) => (
-          <UsuarioCard key={u.id} usuario={u} />
-        ))
+        <div className={styles.listaUsuarios}>
+          {filtrarUsuarios(usuariosHabilitados).map((u) => (
+            <UsuarioCard
+              key={u.id}
+              usuario={u}
+              onCambiarRol={
+                usuarioActual.rol === 'administrador' ? cambiarRolUsuario : null
+              }
+            />
+          ))}
+        </div>
       )}
     </div>
   );

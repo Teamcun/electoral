@@ -1,127 +1,63 @@
-.container {
-  width: 100%;
+/* ResultadosPage.module.css */
+
+.resultadosContainer {
+  padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background-color: #f0f2f5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.tituloPrincipal {
+  font-size: 2rem;
+  color: #1d3973;
   text-align: center;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
   margin-bottom: 2rem;
-  color: #1D3973;
-  font-weight: 700;
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 0.5rem;
 }
 
-section {
-  margin-bottom: 50px;
-  padding: 0 10px;
-  text-align: left;
+.seccionGrafico {
+  margin-bottom: 2.5rem;
 }
 
-h2 {
-  margin-bottom: 10px;
-  color: #155FBF;
-  font-weight: 600;
-  border-bottom: 2px solid #155FBF;
-  padding-bottom: 6px;
+/* Tarjetas generales */
+.card {
+  background-color: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
 }
 
-.participacionText {
-  font-size: 1rem;
+.titulo {
+  font-size: 1.4rem;
   margin-bottom: 1rem;
   color: #333;
-  line-height: 1.5;
 }
 
-/* Wrapper para gráficos */
-.chartWrapper {
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto 40px;
-  aspect-ratio: 2 / 1;
-  border-radius: 12px;
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* ECharts genera canvas interno, ajustamos tamaño */
-.chartWrapper canvas {
-  width: 100% !important;
-  height: 100% !important;
-  border-radius: 12px !important;
-}
-
-/* Grid para ganadores */
-.ganadoresGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 1rem;
+/* Subsecciones dentro de cada tarjeta */
+.subcard {
   margin-top: 1rem;
-}
-
-/* Caja individual de ganador */
-.ganadorBox {
-  background: #f9f9f9;
-  border: 1px solid #ccc;
+  padding: 1rem;
+  background-color: #ffffff;
+  border-left: 4px solid #1d3973;
   border-radius: 8px;
-  padding: 0.5rem;
-  text-align: center;
-  transition: box-shadow 0.2s ease;
+  margin-bottom: 1rem;
 }
 
-.ganadorBox:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-/* Fila con logo + texto */
-.logoRow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+.listaDiputados {
+  list-style: none;
+  padding: 0;
   margin-top: 0.5rem;
 }
 
-/* Imagen logo en la fila */
-.logoImage {
-  height: 40px;
-  max-width: 50px;
-  width: auto;
-  object-fit: contain;
+.listaDiputados li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  margin: 0.25rem 0;
+  font-weight: 500;
 }
 
-/* Texto acrónimo y votos */
-.logoRow div {
-  font-size: 0.9rem;
-  color: #333;
-  line-height: 1.2;
-}
-
-/* Responsivo */
-@media (max-width: 768px) {
-  .container {
-    padding: 15px;
-  }
-
-  .chartWrapper {
-    aspect-ratio: 1.5 / 1;
-  }
-
-  .ganadorBox {
-    padding: 0.4rem;
-  }
-
-  .logoImage {
-    height: 30px;
-    max-width: 40px;
-  }
-
-  .logoRow div {
-    font-size: 0.8rem;
-  }
-}
 

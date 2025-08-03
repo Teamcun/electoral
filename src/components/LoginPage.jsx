@@ -118,10 +118,10 @@ export default function LoginPage() {
           navigate('/revisor/registros_cargados');
           break;
         case 'administrador':
-          navigate('/admin/panel');
+          navigate('/');
           break;
-        case 'jefe':
-          navigate('/jefe/panel');
+        case 'jefe_recinto':
+          navigate('/jefesR/GestionUsuariosPage');
           break;
         default:
           throw new Error('Rol no reconocido');
