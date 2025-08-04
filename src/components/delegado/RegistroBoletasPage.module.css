@@ -30,13 +30,16 @@ h2 {
   line-height: 1.2;
   margin-bottom: 1.5rem;
 
-  /* Gradiente animado aplicado al texto */
-  background: linear-gradient(270deg, var(--azul-medio), var(--azul-oscuro2), var(--azul-medio));
-  background-size: 600% 600%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: gradientAnimation 12s ease infinite;
+  /* Color blanco puro sin gradiente */
+  color: #ffffff;
+
+  /* Eliminar gradiente y animaciones de texto */
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: unset !important;
+  animation: none !important;
 }
+
 
 /* Animación ya definida */
 @keyframes gradientAnimation {
@@ -316,7 +319,7 @@ input[type="file"]:focus,
 
 .checkIcon {
   font-size: 1.3rem;
-  color: var(--verde);
+  color: #28a745 !important;
 }
 
 /* Responsive (ajuste leve para móviles) */
@@ -387,5 +390,6 @@ input[type="file"]:focus,
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
+
 
 

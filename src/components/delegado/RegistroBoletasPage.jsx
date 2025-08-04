@@ -22,6 +22,9 @@ import Cropper from 'react-easy-crop';
 import getCroppedImg, { mejorarEstiloDocumento } from '../utils/cropImage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import PasoIndicador from './PasoIndicador';
+
+
 
 const partidos = [
     'ALIANZA POPULAR (AP)',
@@ -406,22 +409,43 @@ export default function RegistroBoletasPage() {
     const handleChange = async (e) => {
         const { name, value, files, dataset } = e.target;
 
+        // Validar solo números enteros no negativos para campos numéricos
+        const camposNumericos = [
+            'validosPresidente',
+            'validosDiputado',
+            'blancosPresidente',
+            'blancosDiputado',
+            'nulosPresidente',
+            'nulosDiputado',
+            'papeletasAnfora',
+            'papeletasNoUtilizadas',
+            //campos numéricos que tengas en el form
+        ];
+
+        // Función auxiliar para validar entero >= 0 o vacío
+        const esNumeroValido = (val) => val === '' || (/^\d+$/.test(val) && Number(val) >= 0);
+
         if (dataset?.tipo === 'presidente') {
-            setForm(prev => ({
-                ...prev,
-                votosPresidente: {
-                    ...prev.votosPresidente,
-                    [name]: value,
-                },
-            }));
+            // Validar solo si el valor es válido para evitar letras o negativos
+            if (esNumeroValido(value)) {
+                setForm(prev => ({
+                    ...prev,
+                    votosPresidente: {
+                        ...prev.votosPresidente,
+                        [name]: value,
+                    },
+                }));
+            }
         } else if (dataset?.tipo === 'diputado') {
-            setForm(prev => ({
-                ...prev,
-                votosDiputado: {
-                    ...prev.votosDiputado,
-                    [name]: value,
-                },
-            }));
+            if (esNumeroValido(value)) {
+                setForm(prev => ({
+                    ...prev,
+                    votosDiputado: {
+                        ...prev.votosDiputado,
+                        [name]: value,
+                    },
+                }));
+            }
         } else if (name === 'imagenActa' || name === 'imagenHojaTrabajo') {
             const file = files[0];
             if (file) {
@@ -437,19 +461,8 @@ export default function RegistroBoletasPage() {
                 };
                 reader.readAsDataURL(file);
             }
-        } else if (
-            [
-                'validosPresidente',
-                'validosDiputado',
-                'blancosPresidente',
-                'blancosDiputado',
-                'nulosPresidente',
-                'nulosDiputado',
-                'papeletasAnfora',
-                'papeletasNoUtilizadas',
-            ].includes(name)
-        ) {
-            if (value === '' || (/^\d+$/.test(value) && Number(value) >= 0)) {
+        } else if (camposNumericos.includes(name)) {
+            if (esNumeroValido(value)) {
                 setForm(prev => {
                     const nuevoForm = { ...prev, [name]: value };
 
@@ -497,6 +510,7 @@ export default function RegistroBoletasPage() {
                 });
             }
         } else {
+            // Para campos que no necesitan validación numérica
             setForm(prev => ({ ...prev, [name]: value }));
         }
     };
@@ -765,11 +779,15 @@ export default function RegistroBoletasPage() {
 
     return (
         <div className={styles['select-group']}>
-            <h2>Registro de Boleta Electoral</h2>
+            <h2>Registro de Acta Electoral</h2>
 
             <form onSubmit={handleSubmit} className={styles.form}>
                 {/* 📸 Subir imágenes */}
-
+                <PasoIndicador
+                    numero={1}
+                    texto="Sube las imágenes del Acta y Hoja de trabajo"
+                    ayuda="Puedes usar la cámara o seleccionar desde galería. Asegúrate de que la foto esté legible y bien encuadrada para facilitar la verificación."
+                />
                 {/* ===== Foto del Acta ===== */}
                 <div>
                     <label>Foto del Acta:</label>
@@ -901,6 +919,11 @@ export default function RegistroBoletasPage() {
                 )}
 
                 {/* Información del recinto y ubicación asignada al usuario */}
+                <PasoIndicador
+                    numero={2}
+                    texto="Confirma los datos automáticos del usuario"
+                    ayuda="Los campos Departamento, Circunscripción, Provincia, Municipio y Recinto se completan automáticamente según tu perfil."
+                />
                 {userData && (
                     <div className={styles.columnas}>
                         <label>
@@ -955,7 +978,13 @@ export default function RegistroBoletasPage() {
 
 
                 {/* Tabla de votos por partido */}
+
                 <div className={styles.tablaVotos}>
+                    <PasoIndicador
+                        numero={3}
+                        texto="Registra los votos de Presidente y Diputados Uninominales"
+                        ayuda="Ingresa los votos en las columnas correspondientes. Solo se permiten números positivos y el sistema calcula automáticamente los totales para apoyo visual."
+                    />
                     <table>
                         <thead>
                             <tr>
@@ -1009,7 +1038,13 @@ export default function RegistroBoletasPage() {
 
 
                 {/* Totales */}
+                <PasoIndicador
+                        numero={4}
+                        texto="Completa los campos adicionales sobre papeletas"
+                        ayuda="Registra la cantidad de papeletas válidas, blancas, nulas, utilizadas y no utilizadas para mantener el control del material electoral."
+                    />
                 <div className={styles.totales}>
+                    
                     <label>Válidos Presidente: <input name="validosPresidente" type="number" value={form.validosPresidente} onChange={handleChange} required /></label>
                     <label>Válidos Diputado: <input name="validosDiputado" type="number" value={form.validosDiputado} onChange={handleChange} required /></label>
                     <label>Blancos Presidente: <input name="blancosPresidente" type="number" value={form.blancosPresidente} onChange={handleChange} required /></label>
@@ -1018,6 +1053,7 @@ export default function RegistroBoletasPage() {
                     <label>Nulos Diputado:
                         <input name="nulosDiputado" type="number" value={form.nulosDiputado} onChange={handleChange} required />
                     </label>
+                    
                     <label>Papeletas en ánfora (utilizadas):
                         <input name="papeletasAnfora" type="number" value={form.papeletasAnfora} onChange={handleChange} required />
                     </label>

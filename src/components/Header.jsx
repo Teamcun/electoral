@@ -53,17 +53,18 @@ export default function Header() {
 
   return (
     <header className={styles.header}>
-      <div className={styles.logo}>
-        <Link to="/" onClick={cerrarMenu}>
+      {/* Logo */}
+      <div className={styles.logoWrapper}>
+        <Link to="/" onClick={cerrarMenu} className={styles.logo}>
           <img
             src="/img/logo_libre.png"
             alt="Partido LIBRE Logo"
             className={styles.logoImg}
           />
-          LIBRE
         </Link>
       </div>
 
+      {/* Botón hamburguesa visible en móvil */}
       <button
         className={styles.hamburguesa}
         onClick={() => setMenuAbierto(!menuAbierto)}
@@ -72,6 +73,7 @@ export default function Header() {
         ☰
       </button>
 
+      {/* Navegación */}
       <nav className={`${styles.nav} ${menuAbierto ? styles.abierto : ''}`}>
         <a
           href="https://chatgpt.com/g/g-67e3fe14c71c8191844fa99fe1ee3162-libre-al-cambio"
@@ -80,9 +82,9 @@ export default function Header() {
           onClick={cerrarMenu}
         >
           <img
-            src="/img/chat4.png"
+            src="/img/chat5.png"
             alt="Chat personalizado GPT"
-            style={{ width: '24px', height: '24px', marginRight: '8px' }}
+            className={styles.iconoChat}
           />
           IA LIBRE
         </a>
@@ -93,6 +95,7 @@ export default function Header() {
         <Link to="/jefesR/GestionUsuariosPage" onClick={cerrarMenu}>Gestión de cuentas</Link>
         <Link to="/resultados/resultados_graficos" onClick={cerrarMenu}>Resultados</Link>
 
+        {/* Usuario */}
         {user ? (
           <div className={styles.usuarioWrapper} ref={avatarRef}>
             <div
@@ -104,38 +107,27 @@ export default function Header() {
             </div>
 
             {menuUsuarioAbierto && (
-              <>
-                {/*console.log('🧑‍💻 Usuario logueado:', user?.uid)*/}
-                {/*console.log('📬 Email:', user?.email)*/}
-                {/*console.log('📝 Datos en Firestore:', userData)*/}
-
-                <div className={styles.menuUsuario}>
-                  <div className={styles.usuarioInfo}>
-                    <strong>{user.email}</strong>
-
-                    {userData?.rol && <div>Rol: {userData.rol}</div>}
-
-                    {userData?.recintoNombre && (
-                      <div>Recinto: {userData.recintoNombre}</div>
-                    )}
-                  </div>
-
-                  <button onClick={handleLogout} className={styles.BtnSalir}>
-                    Salir
-                  </button>
+              <div className={styles.menuUsuario}>
+                <div className={styles.usuarioInfo}>
+                  <strong>{user.email}</strong>
+                  {userData?.rol && <div>Rol: {userData.rol}</div>}
+                  {userData?.recintoNombre && <div>Recinto: {userData.recintoNombre}</div>}
                 </div>
-              </>
+                <button onClick={handleLogout} className={styles.BtnSalir}>
+                  Salir
+                </button>
+              </div>
             )}
-
           </div>
         ) : (
-          <>
+          <div className={styles.linksAuth}>
             <Link to="/login" onClick={cerrarMenu}>Acceder</Link>
             <Link to="/signup" onClick={cerrarMenu}>Registrarse</Link>
-          </>
+          </div>
         )}
       </nav>
     </header>
+
   );
 }
 

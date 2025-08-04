@@ -247,8 +247,9 @@ export default function RevisoresPage() {
 
   return (
     <div className={styles.container}>
-      <h2>Revisión de Boletas {estadoFiltro.charAt(0).toUpperCase() + estadoFiltro.slice(1)}</h2>
-
+      <div className="pagina-revisor">
+        <h2 className={styles.titulo}>Revisión de Boletas {estadoFiltro.charAt(0).toUpperCase() + estadoFiltro.slice(1)}</h2>
+      </div>
       <div className={styles.filtros}>
         {['pendiente', 'aprobado', 'observado'].map(estado => (
           <button

@@ -120,7 +120,7 @@ export default function VotosPresidencialesChart() {
       }
     },
     grid: {
-      left: '5%',
+      left: '15%', // espacio para etiquetas largas
       right: '5%',
       bottom: '10%',
       containLabel: true
@@ -132,7 +132,11 @@ export default function VotosPresidencialesChart() {
     yAxis: {
       type: 'category',
       data: datosGrafico.map(item => item.name),
-      axisTick: { alignWithLabel: true }
+      axisTick: { alignWithLabel: true },
+      axisLabel: {
+        interval: 0,
+        formatter: value => value.length > 20 ? value.slice(0, 20) + '...' : value
+      }
     },
     series: [
       {
@@ -160,18 +164,19 @@ export default function VotosPresidencialesChart() {
 
   return (
     <div className={styles.card}>
-      <h3 className={styles.titulo}>Votos Presidenciales (Aprobados)</h3>
+      <h3 className={styles.titulo}>Votos Presidenciales</h3>
 
       <div className={styles.chartBlock}>
-        <ReactECharts option={optionsPie} style={{ height: 400 }} />
+        <ReactECharts option={optionsPie} style={{ height: 400, width: '100%' }} />
       </div>
 
       <div className={styles.chartBlock}>
-        <ReactECharts option={optionsBar} style={{ height: 500 }} />
+        <ReactECharts option={optionsBar} style={{ height: 500, width: '100%' }} />
       </div>
     </div>
   );
 }
+
 
 
 

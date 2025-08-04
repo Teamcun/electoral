@@ -1,20 +1,38 @@
+/* Paleta base (ajústala según tu diseño) */
+:root {
+  --azul-oscuro: #1D3973;
+  --azul-medio: #155FBF;
+  --azul-claro: #d0e8ff;
+  --sombra-negra: rgba(0, 0, 0, 0.7);
+}
+
+
+/* HERO PRINCIPAL */
+/* .hero ocupa toda la altura visible */
 .hero {
   position: relative;
-  padding: 6rem 2rem;
+  min-height: 100vh; /* Ocupa todo el alto visible */
+  height: 100%;       /* forzar altura 100% */
+  padding: 4rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   text-align: center;
   background-image: url('/img/intro_6.jpg');
   background-size: cover;
-  background-position: top center;
+  background-position: center;
+  background-repeat: no-repeat;
   color: white;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .hero::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(10, 25, 47, 0.55);
-  /* capa oscura */
+  background: rgba(10, 25, 47, 0.55); /* capa oscura */
   z-index: 0;
 }
 
@@ -24,84 +42,68 @@
     opacity: 0;
     transform: translateY(30px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes gradientAnimation {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* === Estilos internos === */
+/* === Estilos de elementos internos === */
 .title,
 .subtitle,
 .button {
   position: relative;
   z-index: 1;
   animation: fadeInUp 1s ease-in-out;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 2px 8px var(--sombra-negra);
 }
 
 .title {
   font-family: 'Novera Black', sans-serif;
   font-weight: 900;
   font-size: clamp(2rem, 6vw, 3.2rem);
-  text-align: center;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   line-height: 1.2;
   margin-bottom: 1.5rem;
   padding: 0.5rem 1rem;
-
   color: white;
-  /* Color fijo */
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  /* Contraste en fondos oscuros */
-
-  /* Eliminamos gradiente y animación */
-  background: none;
-  -webkit-background-clip: unset;
-  -webkit-text-fill-color: unset;
-  animation: none;
 }
 
-/* SUBTÍTULO MEJORADO */
 .subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  font-style: italic;
   color: #f0f0f0;
-  font-size: clamp(1.1rem, 1.3vw, 1.5rem);
-  /* tamaño responsive */
   max-width: 700px;
   margin: 0 auto 2.5rem auto;
-  /* centrado horizontal y margen abajo */
   line-height: 1.6;
-  font-style: italic;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-  /* sombra para mejor contraste */
   padding: 0 1rem;
-  /* para que no quede pegado a los bordes en pantallas pequeñas */
   animation-delay: 0.4s;
   animation-fill-mode: both;
   user-select: none;
-  /* para que no se seleccione accidentalmente */
+  min-height: 50px;
+  white-space: pre-line;
+  text-shadow: 0 1px 4px var(--sombra-negra);
 }
 
+/* Cursor de máquina de escribir */
+.cursor {
+  display: inline-block;
+  margin-left: 2px;
+  width: 8px;
+  height: 1.2rem;
+  background-color: white;
+  animation: blink 1s infinite;
+}
 
-/* BOTÓN */
+@keyframes blink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0; }
+}
+
+/* BOTÓN PRINCIPAL */
 .button {
-  background: linear-gradient(45deg, #155FBF, #1D3973);
+  background: linear-gradient(45deg, var(--azul-medio), var(--azul-oscuro));
   color: white;
   padding: 16px 36px;
   border: none;
@@ -114,43 +116,61 @@
   animation-fill-mode: both;
   box-shadow: 0 6px 18px rgba(21, 95, 191, 0.6);
   text-transform: uppercase;
-  text-decoration: none;
+  letter-spacing: 0.05em;
+  user-select: none;
 }
 
-.button:hover {
-  background: linear-gradient(45deg, #1D3973, #155FBF);
+.button:hover:not(:disabled) {
+  background: linear-gradient(45deg, var(--azul-oscuro), var(--azul-medio));
   transform: scale(1.08);
   box-shadow: 0 10px 30px rgba(29, 57, 115, 0.85);
 }
 
-.subtitle {
-  font-size: 18px;
-  color: white;
-  text-align: center;
-  margin-bottom: 20px;
-  font-style: italic;
-  min-height: 50px;
-  white-space: pre-line;
+.button:disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.cursor {
-  display: inline-block;
-  margin-left: 2px;
-  width: 8px;
-  background-color: white;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-
-  0%,
-  50%,
-  100% {
-    opacity: 1;
+/* ========== RESPONSIVO ========== */
+@media screen and (max-width: 768px) {
+  .hero {
+    padding: 3rem 1rem;
   }
 
-  25%,
-  75% {
-    opacity: 0;
+  .title {
+    font-size: clamp(1.8rem, 5vw, 2.4rem);
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .button {
+    font-size: 1rem;
+    padding: 14px 28px;
   }
 }
+
+@media screen and (max-width: 480px) {
+  .hero {
+    padding: 2rem 1rem;
+  }
+
+  .title {
+    font-size: 1.6rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    min-height: 40px;
+  }
+
+  .button {
+    padding: 12px 20px;
+    font-size: 0.95rem;
+  }
+}
+
